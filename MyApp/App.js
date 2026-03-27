@@ -1,5 +1,3 @@
-
-
 // import React, { useState } from "react";
 // import {
 //   View,
@@ -14,7 +12,6 @@
 // import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 // const Stack = createNativeStackNavigator();
-
 
 // // ================= LOGIN SCREEN =================
 // function LoginScreen({ navigation }) {
@@ -55,7 +52,6 @@
 //   );
 // }
 
-
 // // ================= DASHBOARD SCREEN =================
 // function DashboardScreen({ route, navigation }) {
 //   const { userEmail } = route.params;
@@ -92,7 +88,6 @@
 //   );
 // }
 
-
 // // ================= MAIN APP =================
 // export default function App() {
 //   return (
@@ -104,7 +99,6 @@
 //     </NavigationContainer>
 //   );
 // }
-
 
 // // ================= STYLES =================
 // const styles = StyleSheet.create({
@@ -153,10 +147,13 @@
 //   },
 // });
 
-
 import React from "react";
 import AppNavigator from "./src/navigation/AppNavigator";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+const App = () => (
+  <SafeAreaProvider>
+    <AppNavigator />
+  </SafeAreaProvider>
+);
 
-export default function App() {
-  return <AppNavigator />;
-}
+export default App;

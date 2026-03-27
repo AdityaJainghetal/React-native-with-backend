@@ -19,7 +19,7 @@ export default function RegisterScreen({ navigation }) {
       setLoading(true);
 
       const response = await fetch(
-        "http://10.0.2.2:5000/api/auth/register",
+        "https://bitzo-server-1.onrender.com/api/auth/register",
         {
           method: "POST",
           headers: {
@@ -29,18 +29,17 @@ export default function RegisterScreen({ navigation }) {
             email,
             password,
           }),
-        }
+        },
       );
 
       const data = await response.json();
-console.log(data)
+      console.log(data);
       if (response.ok) {
         Alert.alert("Registration Successful");
         navigation.replace("Login");
       } else {
         Alert.alert(data.message || "Registration Failed");
       }
-
     } catch (error) {
       console.log(error);
       Alert.alert("Server Error");
@@ -53,11 +52,7 @@ console.log(data)
     <View style={styles.container}>
       <Text style={styles.title}>Register</Text>
 
-      <CustomInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <CustomInput placeholder="Email" value={email} onChangeText={setEmail} />
 
       <CustomInput
         placeholder="Password"
@@ -71,10 +66,7 @@ console.log(data)
         onPress={handleRegister}
       />
 
-      <Text
-        style={styles.link}
-        onPress={() => navigation.navigate("Login")}
-      >
+      <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
         Already have an account? Login
       </Text>
     </View>

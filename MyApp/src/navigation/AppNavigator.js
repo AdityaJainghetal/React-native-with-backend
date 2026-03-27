@@ -27,7 +27,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import AdminTabNavigator from "./AdminTabNavigator";
-
+import VideoDetailScreen from "../admin/VideoDetailScreen";
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
@@ -37,7 +37,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="AdminPanel" component={AdminTabNavigator} />
-       
+       <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

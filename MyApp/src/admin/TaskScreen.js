@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import axios from "axios";
 
-const USER_API = "http://10.0.2.2:5000/api/users";
-const TASK_API = "http://10.0.2.2:5000/api/tasks";
+const USER_API = "https://bitzo-server-1.onrender.com/api/users";
+const TASK_API = "https://bitzo-server-1.onrender.com/api/tasks";
 
 export default function TaskScreen() {
   const [users, setUsers] = useState([]);
@@ -70,8 +70,6 @@ export default function TaskScreen() {
         onChangeText={setDescription}
         style={styles.input}
       />
-
-
 
       {/* Simple User Selector */}
       <FlatList

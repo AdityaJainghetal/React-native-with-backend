@@ -136,7 +136,6 @@
 //   },
 // });
 
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -149,7 +148,7 @@ import {
 } from "react-native";
 import axios from "axios";
 
-const API_URL = "http://10.0.2.2:5000/api/users"; // Android emulator
+const API_URL = "https://bitzo-server-1.onrender.com/api/users"; // Android emulator
 
 export default function UsersScreen() {
   const [users, setUsers] = useState([]);

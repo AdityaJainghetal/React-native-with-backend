@@ -2193,6 +2193,7 @@ export default function ChannelPage() {
                 </Picker>
               </View>
 
+
               <TouchableOpacity 
                 style={styles.uploadBtn} 
                 onPress={() => pickImage((uri) => setNewChannel({ ...newChannel, channelImageUri: uri }))}

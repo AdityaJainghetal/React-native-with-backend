@@ -19,7 +19,7 @@ export default function RegisterScreen({ navigation }) {
       setLoading(true);
 
       const response = await fetch(
-        "https://bitzo-server-1.onrender.com/api/auth/register",
+        "https://bharat-pay-3.onrender.com/api/auth/register",
         {
           method: "POST",
           headers: {

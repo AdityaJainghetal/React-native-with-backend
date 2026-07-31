@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import axios from "axios";
 
-const USER_API = "https://bitzo-server-1.onrender.com/api/users";
-const TASK_API = "https://bitzo-server-1.onrender.com/api/tasks";
+const USER_API = "https://bharat-pay-3.onrender.com/api/users";
+const TASK_API = "https://bharat-pay-3.onrender.com/api/tasks";
 
 export default function TaskScreen() {
   const [users, setUsers] = useState([]);

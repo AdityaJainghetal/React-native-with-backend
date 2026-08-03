@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -13,6 +11,7 @@ import ProfileScreen from "../admin/ProfileScreen";
 import VideoDetailScreen from "../admin/VideoDetailScreen";
 import ChannelScreen from "../admin/ChannelScreen";
 import SubscribedChannels from "../admin/SubscribedChannels";
+import WithdrawScreen from "../admin/Withdraw";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -20,7 +19,14 @@ const Stack = createNativeStackNavigator();
 // Fallback agar koi screen undefined ho
 function FallbackScreen({ name }) {
   return (
-    <View style={{ flex: 1, backgroundColor: "#0f0f0f", justifyContent: "center", alignItems: "center" }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#0f0f0f",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
       <Text style={{ color: "#fff", fontSize: 16 }}>{name} screen missing</Text>
     </View>
   );
@@ -31,7 +37,10 @@ function TabNavigator() {
 
   // Safety: undefined component crash na kare
   const YouScreen = ProfileScreen || (() => <FallbackScreen name="Profile" />);
-  const SubscribeScreen = SubscribedChannels || ShortsScreen || (() => <FallbackScreen name="Subscribe" />);
+  const SubscribeScreen =
+    SubscribedChannels ||
+    ShortsScreen ||
+    (() => <FallbackScreen name="Subscribe" />);
 
   return (
     <Tab.Navigator
@@ -147,6 +156,7 @@ export default function AdminTabNavigator() {
       <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
       <Stack.Screen name="SubscribedChannels" component={SubscribedChannels} />
+      <Stack.Screen name="Withdraw" component={WithdrawScreen} />
     </Stack.Navigator>
   );
 }

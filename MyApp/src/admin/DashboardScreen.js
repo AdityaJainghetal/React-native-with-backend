@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -65,6 +63,12 @@ const normalizeShort = (video = {}) => ({
     : "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=225&fit=crop",
   views: Number(video.views || 0),
   likes: Number(video.likesCount ?? video.likes ?? 0),
+  comments: Number(video.comments || 0),
+  videoUrl: video.videoUrl
+    ? /^https?:\/\//i.test(video.videoUrl)
+      ? video.videoUrl.replace(/\\/g, "/")
+      : `${BACKEND_URL}/${String(video.videoUrl).replace(/\\/g, "/")}`
+    : "",
   videoType: video.videoType || "short",
   raw: video,
   isShort: true,
@@ -225,7 +229,10 @@ export default function NetflixStylePage() {
 
   const handleItemClick = (item) => {
     if (isShortContent(item)) {
-      navigation.navigate("Shorts", { video: item });
+      navigation.navigate("MainTabs", {
+        screen: "Shorts",
+        params: { video: item },
+      });
       return;
     }
     navigation.navigate("VideoDetail", { id: item.id, item });

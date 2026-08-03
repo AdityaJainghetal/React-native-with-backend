@@ -80,21 +80,42 @@ export default function ShortsScreen() {
         const normalized =
           list.length > 0 ? list.map(normalizeShort) : FALLBACK_SHORTS;
 
-        setShortsData(normalized);
-
         const selectedVideo = route?.params?.video;
-        if (selectedVideo?.id || selectedVideo?._id) {
-          const matchIndex = normalized.findIndex(
-            (item) =>
-              String(item.id) === String(selectedVideo.id ?? selectedVideo._id),
+        const selectedId = String(
+          selectedVideo?.id ?? selectedVideo?._id ?? "",
+        );
+        const selectedVideoUrl =
+          selectedVideo?.videoUrl || selectedVideo?.raw?.videoUrl;
+
+        const finalList = selectedId
+          ? [
+              normalizeShort(selectedVideo?.raw || selectedVideo),
+              ...normalized.filter((item) => String(item.id) !== selectedId),
+            ]
+          : normalized;
+
+        setShortsData(finalList);
+
+        if (selectedId) {
+          const matchIndex = finalList.findIndex(
+            (item) => String(item.id) === selectedId,
           );
           if (matchIndex >= 0) {
             setCurrentIndex(matchIndex);
+          } else {
+            setCurrentIndex(0);
           }
+        } else {
+          setCurrentIndex(0);
+        }
+
+        if (selectedVideoUrl && !finalList[0]?.videoUrl) {
+          finalList[0].videoUrl = selectedVideoUrl;
         }
       } catch (error) {
         console.warn("Shorts load error:", error);
         setShortsData(FALLBACK_SHORTS);
+        setCurrentIndex(0);
       } finally {
         setLoading(false);
       }

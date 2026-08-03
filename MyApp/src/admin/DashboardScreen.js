@@ -74,10 +74,35 @@ const normalizeShort = (video = {}) => ({
   isShort: true,
 });
 
+const normalizeSubscriptionChannel = (channel = {}) => ({
+  id: channel._id || channel.id || channel.channelId,
+  title: channel.name || channel.channelName || "Subscribed Channel",
+  thumb:
+    channel.channelImage ||
+    channel.avatar ||
+    channel.image ||
+    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=225&fit=crop",
+  thumbnail:
+    channel.channelImage ||
+    channel.avatar ||
+    channel.image ||
+    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=225&fit=crop",
+  description: channel.description || "",
+  views: Number(channel.views || 0),
+  raw: channel,
+  channel: channel.channel || channel,
+  isChannel: true,
+  videoType: "channel",
+});
+
 const getArrayFromPayload = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.videos)) return payload.videos;
   if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.channels)) return payload.channels;
+  if (Array.isArray(payload?.subscribedChannels))
+    return payload.subscribedChannels;
+  if (Array.isArray(payload?.subscribers)) return payload.subscribers;
   return [];
 };
 
@@ -187,7 +212,7 @@ export default function NetflixStylePage() {
           fetchWithAuth("recommended"),
           fetchWithAuth("trending"),
           fetchWithAuth("latest"),
-          fetchWithAuth("subscriptions"),
+          fetchWithAuth("subscribed-channels"),
           fetchWithAuth("trending-shorts"),
         ]);
 
@@ -199,7 +224,9 @@ export default function NetflixStylePage() {
         );
         setLatest(getArrayFromPayload(latestData).map(normalizeVideoListItem));
         setSubscriptions(
-          getArrayFromPayload(subscriptionsData).map(normalizeVideoListItem),
+          getArrayFromPayload(subscriptionsData).map(
+            normalizeSubscriptionChannel,
+          ),
         );
         setShorts(getArrayFromPayload(shortsData).map(normalizeShort));
       } catch (error) {
@@ -228,6 +255,11 @@ export default function NetflixStylePage() {
   };
 
   const handleItemClick = (item) => {
+    if (item?.isChannel) {
+      navigation.navigate("SubscribedChannels", { id: item.id });
+      return;
+    }
+
     if (isShortContent(item)) {
       navigation.navigate("MainTabs", {
         screen: "Shorts",
@@ -235,6 +267,7 @@ export default function NetflixStylePage() {
       });
       return;
     }
+
     navigation.navigate("VideoDetail", { id: item.id, item });
   };
 

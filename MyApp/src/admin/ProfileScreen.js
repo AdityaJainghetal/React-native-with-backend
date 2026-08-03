@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Dimensions,
   FlatList,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,11 +36,15 @@ import {
   X,
   Upload,
   ArrowLeft,
+  LogOut,
+  User,
+  Shield,
+  HelpCircle,
+  Moon,
 } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
 
-// Production URL (local testing ke liye localhost use karo)
 const API_BASE = "https://bharat-pay-3.onrender.com/api";
 const BACKEND_URL = "https://bharat-pay-3.onrender.com";
 
@@ -50,7 +55,7 @@ const BACKEND_URL = "https://bharat-pay-3.onrender.com";
 export default function ProfileScreen() {
   const navigation = useNavigation();
 
-  const [activeTab, setActiveTab] = useState("my-videos"); // my-videos | watch-later | liked | history
+  const [activeTab, setActiveTab] = useState("my-videos");
   const [sortBy, setSortBy] = useState("latest");
   const [selectedVideo, setSelectedVideo] = useState(null);
 
@@ -58,7 +63,6 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Videos lists
   const [myVideos, setMyVideos] = useState([]);
   const [historyVideos, setHistoryVideos] = useState([]);
   const [watchLaterVideos, setWatchLaterVideos] = useState([]);
@@ -69,14 +73,12 @@ export default function ProfileScreen() {
   const [watchLaterLoading, setWatchLaterLoading] = useState(false);
   const [likedLoading, setLikedLoading] = useState(false);
 
-  // Edit Profile
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "" });
   const [avatarUri, setAvatarUri] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState(null);
 
-  // Change Password
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: "",
@@ -101,7 +103,6 @@ export default function ProfileScreen() {
     return `${BACKEND_URL}/${cleaned}`;
   };
 
-  // Helper: map video object (common for all APIs)
   const mapVideo = (v) => ({
     id: v._id || v.id,
     _id: v._id || v.id,
@@ -120,7 +121,7 @@ export default function ProfileScreen() {
     description: v.description || "",
   });
 
-  // ─── Fetch Profile (/me) ───
+  // ─── Fetch Profile ───
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -223,7 +224,6 @@ export default function ProfileScreen() {
     fetchHistory();
   }, []);
 
-  // ─── Fetch Watch Later ───
   const fetchWatchLater = async () => {
     try {
       setWatchLaterLoading(true);
@@ -242,8 +242,6 @@ export default function ProfileScreen() {
       const data = await res.json();
       const mapped = (data.videos || []).map(mapVideo);
       setWatchLaterVideos(mapped);
-
-      // Update count
       setUser((prev) =>
         prev ? { ...prev, watchLaterCount: mapped.length } : prev
       );
@@ -255,7 +253,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // ─── Fetch Liked Videos ───
   const fetchLiked = async () => {
     try {
       setLikedLoading(true);
@@ -274,7 +271,6 @@ export default function ProfileScreen() {
       const data = await res.json();
       const mapped = (data.videos || []).map(mapVideo);
       setLikedVideos(mapped);
-
       setUser((prev) =>
         prev ? { ...prev, likedCount: mapped.length } : prev
       );
@@ -286,7 +282,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // ─── Fetch My Videos ───
   useEffect(() => {
     if (!user?._id) return;
 
@@ -366,7 +361,6 @@ export default function ProfileScreen() {
     fetchMyVideos();
   }, [user?._id]);
 
-  // When tab changes → fetch if needed
   useEffect(() => {
     if (activeTab === "watch-later" && watchLaterVideos.length === 0) {
       fetchWatchLater();
@@ -376,7 +370,6 @@ export default function ProfileScreen() {
     }
   }, [activeTab]);
 
-  // ─── Pick Avatar ───
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -397,7 +390,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // ─── Edit Profile ───
   const handleEditSubmit = async () => {
     setEditLoading(true);
     setEditError(null);
@@ -475,7 +467,6 @@ export default function ProfileScreen() {
     setAvatarUri(null);
   };
 
-  // ─── Change Password ───
   const handlePasswordSubmit = async () => {
     try {
       setPasswordLoading(true);
@@ -574,7 +565,6 @@ export default function ProfileScreen() {
     });
   };
 
-  // ─── Render Video List (reusable) ───
   const renderVideoList = (videos, isLoading, emptyText) => {
     if (isLoading) {
       return (
@@ -627,7 +617,6 @@ export default function ProfileScreen() {
     return 0;
   });
 
-  // ─── Expanded List Header (back button) ───
   const ListHeader = ({ title, count }) => (
     <View style={styles.listHeader}>
       <TouchableOpacity
@@ -644,7 +633,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top bar */}
+      <StatusBar barStyle="light-content" backgroundColor="#0f0f0f" />
+
+      {/* Top bar - extra top padding */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.accountsBtn}
@@ -669,8 +660,10 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile header - hide when in sub-list */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         {activeTab === "my-videos" && (
           <>
             <View style={styles.profileHeader}>
@@ -702,7 +695,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* History horizontal */}
+            {/* History */}
             <View style={styles.section}>
               <TouchableOpacity
                 style={styles.sectionHeader}
@@ -770,7 +763,6 @@ export default function ProfileScreen() {
                 Library
               </Text>
 
-              {/* Watch Later - CLICKABLE */}
               <TouchableOpacity
                 style={styles.libraryRow}
                 activeOpacity={0.7}
@@ -793,7 +785,6 @@ export default function ProfileScreen() {
                 <MoreVertical size={20} color="#aaa" />
               </TouchableOpacity>
 
-              {/* Liked videos - CLICKABLE */}
               <TouchableOpacity
                 style={styles.libraryRow}
                 activeOpacity={0.7}
@@ -821,7 +812,6 @@ export default function ProfileScreen() {
                 <MoreVertical size={20} color="#aaa" />
               </TouchableOpacity>
 
-              {/* Your videos */}
               <TouchableOpacity
                 style={styles.libraryRow}
                 activeOpacity={0.7}
@@ -855,7 +845,6 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* ═══════════════ WATCH LATER LIST ═══════════════ */}
         {activeTab === "watch-later" && (
           <View style={styles.section}>
             <ListHeader
@@ -870,22 +859,16 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* ═══════════════ LIKED VIDEOS LIST ═══════════════ */}
         {activeTab === "liked" && (
           <View style={styles.section}>
             <ListHeader
               title="Liked videos"
               count={likedVideos.length || user.likedCount}
             />
-            {renderVideoList(
-              likedVideos,
-              likedLoading,
-              "No liked videos yet"
-            )}
+            {renderVideoList(likedVideos, likedLoading, "No liked videos yet")}
           </View>
         )}
 
-        {/* ═══════════════ FULL HISTORY LIST ═══════════════ */}
         {activeTab === "history" && (
           <View style={styles.section}>
             <ListHeader title="History" count={historyVideos.length} />
@@ -897,7 +880,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* ═══════════════ YOUR VIDEOS (default expanded) ═══════════════ */}
         {activeTab === "my-videos" && (
           <View style={styles.section}>
             <View style={styles.videosHeader}>
@@ -933,7 +915,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Earnings - only on main view */}
         {activeTab === "my-videos" && (
           <View style={[styles.section, { paddingHorizontal: 16 }]}>
             <Text style={styles.sectionTitle}>Earnings</Text>
@@ -953,18 +934,39 @@ export default function ProfileScreen() {
             </View>
           </View>
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Menu Modal */}
-      <Modal visible={showMenu} transparent animationType="fade">
+      {/* ═══════════════ YOUTUBE-STYLE SETTINGS MENU ═══════════════ */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMenu(false)}
+      >
         <TouchableOpacity
           style={styles.menuOverlay}
           activeOpacity={1}
           onPress={() => setShowMenu(false)}
         >
-          <View style={styles.menuBox}>
+          <View style={styles.menuSheet}>
+            {/* Handle bar */}
+            <View style={styles.menuHandle} />
+
+            {/* User row */}
+            <View style={styles.menuUserRow}>
+              <Image source={{ uri: user.avatar }} style={styles.menuAvatar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuUserName}>{user.name}</Text>
+                <Text style={styles.menuUserHandle}>{user.handle}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowMenu(false)}>
+                <X size={22} color="#aaa" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuDivider} />
+
+            {/* Menu items - YouTube style */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -972,9 +974,10 @@ export default function ProfileScreen() {
                 setIsEditOpen(true);
               }}
             >
-              <Edit size={18} color="#fff" />
+              <User size={22} color="#fff" />
               <Text style={styles.menuText}>Edit profile</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -982,9 +985,10 @@ export default function ProfileScreen() {
                 setIsPasswordOpen(true);
               }}
             >
-              <Lock size={18} color="#fff" />
+              <Lock size={22} color="#fff" />
               <Text style={styles.menuText}>Change password</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -992,10 +996,35 @@ export default function ProfileScreen() {
                 navigation.navigate("Withdraw");
               }}
             >
-              <IndianRupee size={18} color="#fff" />
+              <IndianRupee size={22} color="#fff" />
               <Text style={styles.menuText}>Withdraw</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMenu(false);
+                navigation.navigate("ChannelPage");
+              }}
+            >
+              <Play size={22} color="#fff" />
+              <Text style={styles.menuText}>Your channel</Text>
+            </TouchableOpacity>
+
             <View style={styles.menuDivider} />
+
+            <TouchableOpacity style={styles.menuItem}>
+              <Settings size={22} color="#fff" />
+              <Text style={styles.menuText}>Settings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <HelpCircle size={22} color="#fff" />
+              <Text style={styles.menuText}>Help & feedback</Text>
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -1003,10 +1032,13 @@ export default function ProfileScreen() {
                 handleLogout();
               }}
             >
+              <LogOut size={22} color="#ff4444" />
               <Text style={[styles.menuText, { color: "#ff4444" }]}>
-                Logout
+                Sign out
               </Text>
             </TouchableOpacity>
+
+            <View style={{ height: 30 }} />
           </View>
         </TouchableOpacity>
       </Modal>
@@ -1292,12 +1324,14 @@ const styles = StyleSheet.create({
   },
   retryText: { color: "#fff", fontWeight: "600" },
 
+  // Top bar - extra top padding
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: Platform.OS === "ios" ? 54 : 28,
+    paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: "#272727",
   },
@@ -1316,7 +1350,7 @@ const styles = StyleSheet.create({
 
   profileHeader: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 8,
   },
   profileRow: { flexDirection: "row", alignItems: "center", gap: 14 },
@@ -1362,7 +1396,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // List header with back button
   listHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1370,14 +1403,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-  backBtn: {
-    padding: 4,
-  },
-  listHeaderTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
+  backBtn: { padding: 4 },
+  listHeaderTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
 
   historyCard: { width: 160 },
   historyThumb: {
@@ -1473,34 +1500,70 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  // ─── YouTube-style bottom sheet menu ───
   menuOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-start",
-    paddingTop: 60,
-    paddingHorizontal: 16,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "flex-end",
   },
-  menuBox: {
+  menuSheet: {
     backgroundColor: "#212121",
-    borderRadius: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+    maxHeight: "80%",
+  },
+  menuHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#555",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  menuUserRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 14,
+  },
+  menuAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#333",
+  },
+  menuUserName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  menuUserHandle: {
+    color: "#aaa",
+    fontSize: 13,
+    marginTop: 2,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 18,
     paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
   },
-  menuText: { color: "#fff", fontSize: 15 },
+  menuText: {
+    color: "#fff",
+    fontSize: 15,
+  },
   menuDivider: {
     height: 1,
     backgroundColor: "#333",
-    marginVertical: 4,
+    marginVertical: 6,
+    marginHorizontal: 16,
   },
 
+  // Modals
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.8)",

@@ -19,12 +19,11 @@ import {
   Copy,
   Check,
   AlertCircle,
-  IndianRupee,
 } from "lucide-react-native";
-import * as Clipboard from "expo-clipboard"; // ya @react-native-clipboard/clipboard
+import * as Clipboard from "expo-clipboard";
 
 const API_BASE = "https://bharat-pay-3.onrender.com/api";
-// Local testing:
+// Local:
 // const API_BASE = "http://localhost:8000/api";
 
 export default function WithdrawScreen() {
@@ -38,24 +37,17 @@ export default function WithdrawScreen() {
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
-  const [upiId, setUpiId] = useState(""); // user ka UPI (optional)
 
-  // 1 point = ₹0.01 example (aap adjust kar sakte ho)
-  const inrBalance = (points * 0.01).toFixed(2);
+  // 1 point = $0.01
+  const usdBalance = (points * 0.01).toFixed(2);
 
   const methods = [
-    {
-      id: "upi",
-      name: "UPI (GPay / PhonePe / Paytm)",
-      min: 50,
-      fee: 0,
-      icon: "₹",
-    },
-    { id: "bank", name: "Bank Transfer", min: 100, fee: 0, icon: "🏦" },
-    { id: "cash", name: "Cash / Other", min: 100, fee: 0, icon: "$" },
+    { id: "upi", name: "UPI (Google Pay / PhonePe)", min: 5, fee: 0, icon: "₹" },
+    { id: "paypal", name: "Cash", min: 10, fee: 2.9, icon: "$" },
+    { id: "bank", name: "Bank Transfer", min: 20, fee: 1.5, icon: "🏦" },
   ];
 
-  // ─── Fetch current points / earnings ───
+  // ─── Fetch points from /me ───
   useEffect(() => {
     const fetchBalance = async () => {
       try {
@@ -74,7 +66,6 @@ export default function WithdrawScreen() {
 
         const data = await res.json();
         if (data.success && data.user) {
-          // aapke backend ke hisaab se field change karo
           const rewardPoints =
             data.user.rewardPoints || data.user.totalEarnings || 0;
           setPoints(Number(rewardPoints));
@@ -91,9 +82,7 @@ export default function WithdrawScreen() {
   }, [navigation]);
 
   const handleCopyUPI = async () => {
-    // yahan apna real UPI ID daalo
-    const adminUpi = "aditya@upi";
-    await Clipboard.setStringAsync(adminUpi);
+    await Clipboard.setStringAsync("aditya@upi");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -110,10 +99,10 @@ export default function WithdrawScreen() {
       return;
     }
     if (withdrawAmount < selectedMethod.min) {
-      setError(`Minimum withdrawal is ₹${selectedMethod.min}`);
+      setError(`Minimum withdrawal is $${selectedMethod.min}`);
       return;
     }
-    if (withdrawAmount > parseFloat(inrBalance)) {
+    if (withdrawAmount > parseFloat(usdBalance)) {
       setError("Insufficient balance");
       return;
     }
@@ -125,7 +114,7 @@ export default function WithdrawScreen() {
       const token = await AsyncStorage.getItem("token");
       if (!token) throw new Error("Please login again");
 
-      // ── Backend call (example) ──
+      // Backend call (uncomment jab API ready ho)
       // const res = await fetch(`${API_BASE}/withdraw`, {
       //   method: "POST",
       //   headers: {
@@ -135,21 +124,18 @@ export default function WithdrawScreen() {
       //   body: JSON.stringify({
       //     amount: withdrawAmount,
       //     method: selectedMethod.id,
-      //     upiId: selectedMethod.id === "upi" ? upiId : undefined,
       //   }),
       // });
       // const data = await res.json();
       // if (!res.ok || !data.success) throw new Error(data.message || "Withdraw failed");
 
-      // Temporary success (jab tak backend ready na ho)
       Alert.alert(
         "Request Submitted",
-        `₹${withdrawAmount.toFixed(2)} via ${selectedMethod.name} request bhej diya gaya hai.\nProcessing: 1-3 business days.`,
+        `$${withdrawAmount.toFixed(2)} via ${selectedMethod.name} request submitted!\nProcessing: 1-3 business days.`
       );
 
       setAmount("");
       setSelectedMethod(null);
-      setUpiId("");
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -172,7 +158,7 @@ export default function WithdrawScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
     >
-      {/* Header */}
+      {/* Optional Header (back button) */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -193,12 +179,12 @@ export default function WithdrawScreen() {
           <View style={styles.balanceRow}>
             <View>
               <Text style={styles.balanceLabel}>Available Balance</Text>
-              <Text style={styles.balanceValue}>₹{inrBalance}</Text>
+              <Text style={styles.balanceValue}>${usdBalance}</Text>
             </View>
             <Wallet size={48} color="#facc15" style={{ opacity: 0.85 }} />
           </View>
           <Text style={styles.pointsText}>
-            ≈ {Number(points).toFixed(0)} Points (1 point = ₹0.01)
+            ≈ {Number(points).toFixed(2)} Bitzo Points (1 point = $0.01)
           </Text>
         </View>
 
@@ -228,7 +214,7 @@ export default function WithdrawScreen() {
                   <View>
                     <Text style={styles.methodName}>{method.name}</Text>
                     <Text style={styles.methodMeta}>
-                      Min: ₹{method.min} • Fee: {method.fee}%
+                      Min: ${method.min} • Fee: {method.fee}%
                     </Text>
                   </View>
                 </View>
@@ -241,9 +227,9 @@ export default function WithdrawScreen() {
         {/* Amount Input */}
         {selectedMethod && (
           <View style={styles.amountSection}>
-            <Text style={styles.label}>Amount to Withdraw (₹)</Text>
+            <Text style={styles.label}>Amount to Withdraw (USD)</Text>
             <View style={styles.amountInputRow}>
-              <Text style={styles.rupeeSymbol}>₹</Text>
+              <Text style={styles.currencySymbol}>$</Text>
               <TextInput
                 style={styles.amountInput}
                 value={amount}
@@ -265,7 +251,7 @@ export default function WithdrawScreen() {
             ) : null}
 
             <Text style={styles.feeHint}>
-              You will receive ≈ ₹
+              You will receive ≈ $
               {(
                 (parseFloat(amount) || 0) *
                 (1 - selectedMethod.fee / 100)
@@ -275,10 +261,10 @@ export default function WithdrawScreen() {
           </View>
         )}
 
-        {/* UPI specific */}
+        {/* UPI Specific */}
         {selectedMethod?.id === "upi" && (
           <View style={styles.upiBox}>
-            <Text style={styles.upiLabel}>Send to Admin UPI ID:</Text>
+            <Text style={styles.upiLabel}>Send to UPI ID:</Text>
             <View style={styles.upiRow}>
               <Text style={styles.upiId}>aditya@upi</Text>
               <TouchableOpacity onPress={handleCopyUPI} style={styles.copyBtn}>
@@ -290,21 +276,8 @@ export default function WithdrawScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.upiHint}>
-              Exact amount bhejo aur screenshot support mein share karo
+              Send exact amount and share screenshot in support
             </Text>
-
-            {/* Optional: user apna UPI bhi daal sakta hai */}
-            <Text style={[styles.label, { marginTop: 16 }]}>
-              Your UPI ID (optional)
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={upiId}
-              onChangeText={setUpiId}
-              placeholder="yourname@upi"
-              placeholderTextColor="#71717a"
-              autoCapitalize="none"
-            />
           </View>
         )}
 
@@ -377,7 +350,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: 160, // bottom tab ke liye gap
   },
 
   // Balance Card
@@ -479,7 +452,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
   },
-  rupeeSymbol: {
+  currencySymbol: {
     color: "#a1a1aa",
     fontSize: 20,
     marginRight: 6,
@@ -541,16 +514,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
   },
-  input: {
-    backgroundColor: "#0f0f0f",
-    borderWidth: 1,
-    borderColor: "#3f3f46",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#fff",
-    fontSize: 15,
-  },
 
   withdrawBtn: {
     backgroundColor: "#16a34a",
@@ -572,24 +535,8 @@ const styles = StyleSheet.create({
     color: "#71717a",
     fontSize: 12,
     textAlign: "center",
-    marginTop: 20,
-    lineHeight: 18,
-  },
-
-    scrollContent: {
-    flexGrow: 1,
-    padding: 16,
-    paddingBottom: 160,   // bottom tab ke liye safe gap
-  },
-
-  // ... baaki styles same ...
-
-  footerNote: {
-    color: "#71717a",
-    fontSize: 12,
-    textAlign: "center",
     marginTop: 24,
-    marginBottom: 50,
+    marginBottom: 40,
     lineHeight: 18,
   },
 });

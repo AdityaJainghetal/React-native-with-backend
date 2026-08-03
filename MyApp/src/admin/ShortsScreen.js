@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,18 @@ import {
   FlatList,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
-import { Video } from "expo-av"; // Expo ke liye
-// import Video from "react-native-video"; // Bare RN ke liye yeh use karo
+import { Video } from "expo-av";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-// Ya: import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRoute } from "@react-navigation/native";
 
 const { height, width } = Dimensions.get("window");
+const BACKEND_URL = "https://bharat-pay-3.onrender.com";
+const API_BASE = `${BACKEND_URL}/api/uservideo`;
 
-const shortsData = [
+const FALLBACK_SHORTS = [
   {
     id: "s1",
     title: "Amazing Nature Moments",
@@ -33,19 +36,76 @@ const shortsData = [
     comments: "8.5K",
     videoUrl: "https://www.w3schools.com/html/movie.mp4",
   },
-  // Aur videos add kar sakte ho
 ];
 
+const normalizeShort = (video = {}) => ({
+  id: video._id || video.id || String(Date.now() + Math.random()),
+  title: video.title || "Untitled Short",
+  views: `${Number(video.views || 0).toLocaleString()} views`,
+  likes: Number(video.likesCount ?? video.likes ?? 0).toLocaleString(),
+  comments: Number(video.comments || 0).toLocaleString(),
+  videoUrl: video.videoUrl
+    ? /^https?:\/\//i.test(video.videoUrl)
+      ? video.videoUrl.replace(/\\/g, "/")
+      : `${BACKEND_URL}/${String(video.videoUrl).replace(/\\/g, "/")}`
+    : "https://www.w3schools.com/html/mov_bbb.mp4",
+});
+
+const getArrayFromPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.videos)) return payload.videos;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function ShortsScreen() {
+  const route = useRoute();
+  const [shortsData, setShortsData] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [liked, setLiked] = useState({});
   const [muted, setMuted] = useState(true);
+  const [loading, setLoading] = useState(true);
   const videoRefs = useRef({});
 
+  useEffect(() => {
+    const loadShorts = async () => {
+      try {
+        setLoading(true);
+        const token = await AsyncStorage.getItem("token");
+        const response = await fetch(`${API_BASE}/trending-shorts`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await response.json().catch(() => ({}));
+        const list = getArrayFromPayload(data);
+        const normalized =
+          list.length > 0 ? list.map(normalizeShort) : FALLBACK_SHORTS;
+
+        setShortsData(normalized);
+
+        const selectedVideo = route?.params?.video;
+        if (selectedVideo?.id || selectedVideo?._id) {
+          const matchIndex = normalized.findIndex(
+            (item) =>
+              String(item.id) === String(selectedVideo.id ?? selectedVideo._id),
+          );
+          if (matchIndex >= 0) {
+            setCurrentIndex(matchIndex);
+          }
+        }
+      } catch (error) {
+        console.warn("Shorts load error:", error);
+        setShortsData(FALLBACK_SHORTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadShorts();
+  }, [route?.params?.video?.id, route?.params?.video?._id]);
+
   const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      const index = viewableItems[0].index;
-      setCurrentIndex(index);
+    if (viewableItems.length > 0 && viewableItems[0]?.index != null) {
+      setCurrentIndex(viewableItems[0].index);
     }
   }, []);
 
@@ -74,16 +134,11 @@ export default function ShortsScreen() {
           shouldPlay={isActive}
           isLooping
           isMuted={muted}
-          // Bare RN ke liye:
-          // paused={!isActive}
-          // muted={muted}
-          // repeat
+          useNativeControls={false}
         />
 
-        {/* Dark overlay */}
         <View style={styles.overlay} />
 
-        {/* Bottom Left Info */}
         <View style={styles.bottomLeft}>
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.views}>{item.views}</Text>
@@ -93,7 +148,6 @@ export default function ShortsScreen() {
           </View>
         </View>
 
-        {/* Right Side Buttons */}
         <View style={styles.rightButtons}>
           <TouchableOpacity
             style={styles.iconBtn}
@@ -137,23 +191,33 @@ export default function ShortsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      <FlatList
-        data={shortsData}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        snapToInterval={height}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        // Performance
-        removeClippedSubviews
-        maxToRenderPerBatch={2}
-        windowSize={3}
-        initialNumToRender={1}
-      />
+      {loading ? (
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator color="#fff" size="large" />
+        </View>
+      ) : (
+        <FlatList
+          data={shortsData}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderItem}
+          pagingEnabled
+          showsVerticalScrollIndicator={false}
+          snapToInterval={height}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          removeClippedSubviews
+          maxToRenderPerBatch={2}
+          windowSize={3}
+          initialNumToRender={1}
+          getItemLayout={(_, index) => ({
+            length: height,
+            offset: height * index,
+            index,
+          })}
+        />
+      )}
     </View>
   );
 }
@@ -163,9 +227,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
+  loaderWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   videoContainer: {
-    width: width,
-    height: height,
+    width,
+    height,
     backgroundColor: "#000",
   },
   video: {

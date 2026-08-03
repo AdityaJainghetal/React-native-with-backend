@@ -1,1009 +1,21 @@
 
 
-// // import React, { useState, useRef, useEffect, memo } from 'react';
-// // import {
-// //   View,
-// //   Text,
-// //   Image,
-// //   TouchableOpacity,
-// //   StyleSheet,
-// //   Dimensions,
-// //   ActivityIndicator,
-// // } from 'react-native';
-// // import { VideoView, useVideoPlayer } from 'expo-video';
-// // import Slider from '@react-native-community/slider';
-// // import { Ionicons } from '@expo/vector-icons';
-// // import * as ScreenOrientation from 'expo-screen-orientation';
-
-// // const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// // const VIDEO_POOL = [
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg",
-// //   },
-// // ];
-
-// // const UP_NEXT = [
-// //   { id: 2, title: "Sintel – Short Fantasy Film", channel: "Blender Foundation", views: "4.2M", time: "2 days ago" },
-// //   { id: 3, title: "Elephants Dream – Surreal Animation", channel: "Blender Foundation", views: "1.8M", time: "1 week ago" },
-// //   { id: 4, title: "Tears of Steel – Post-Apocalyptic CGI", channel: "Blender Foundation", views: "3.1M", time: "5 days ago" },
-// // ];
-
-// // function getVideoEntry(id) {
-// //   const idx = (Number(id) || 1) % VIDEO_POOL.length;
-// //   return VIDEO_POOL[idx];
-// // }
-
-// // function formatTime(millis) {
-// //   if (!millis) return "0:00";
-// //   const min = Math.floor(millis / 60000);
-// //   const sec = ((millis % 60000) / 1000).toFixed(0);
-// //   return `${min}:${Number(sec).toString().padStart(2, '0')}`;
-// // }
-
-// // function VideoDetail({ route, navigation }) {
-// //   const { id, item } = route.params || {};
-// //   const videoData = item || { title: "Big Buck Bunny" };
-// //   const entry = getVideoEntry(id);
-
-// //   const player = useVideoPlayer(
-// //     { uri: entry.uri },
-// //     (player) => {
-// //       player.loop = false;
-// //       player.muted = false;
-// //       player.play();
-// //     }
-// //   );
-
-// //   const [showControls, setShowControls] = useState(true);
-// //   const [isBuffering, setIsBuffering] = useState(false);
-
-// //   // Optional: hide controls after few seconds
-// //   useEffect(() => {
-// //     if (!showControls) return;
-// //     const timer = setTimeout(() => setShowControls(false), 4500);
-// //     return () => clearTimeout(timer);
-// //   }, [showControls]);
-
-// //   useEffect(() => {
-// //     ScreenOrientation.unlockAsync();
-// //     return () => {
-// //       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-// //     };
-// //   }, []);
-
-// //   const togglePlayPause = () => {
-// //     if (player.playing) {
-// //       player.pause();
-// //     } else {
-// //       player.play();
-// //     }
-// //   };
-
-// //   const toggleMute = () => {
-// //     player.muted = !player.muted;
-// //   };
-
-// //   const onSliderComplete = (value) => {
-// //     player.currentTime = value * (player.duration ?? 0);
-// //   };
-
-// //   const progress = player.duration > 0 ? player.currentTime / player.duration : 0;
-
-// //   return (
-// //     <View style={styles.container}>
-// //       {/* Video Player */}
-// //       <View style={styles.videoContainer}>
-// //         <VideoView
-// //           player={player}
-// //           style={styles.video}
-// //           contentFit="contain"
-// //           nativeControls={false}           // we use custom controls
-// //           allowsPictureInPicture
-// //           startsPictureInPictureAutomatically={false}
-// //           poster={entry.poster}
-// //           onPlaybackStatusChange={(status) => {
-// //             setIsBuffering(status === 'buffering');
-// //           }}
-// //         />
-
-// //         {/* Custom Controls Overlay */}
-// //         {showControls && (
-// //           <TouchableOpacity
-// //             style={StyleSheet.absoluteFill}
-// //             activeOpacity={1}
-// //             onPress={() => setShowControls(true)} // tap to show again
-// //           >
-// //             <View style={styles.controlsOverlay}>
-// //               {/* Center Play/Pause */}
-// //               <TouchableOpacity style={styles.centerPlay} onPress={togglePlayPause}>
-// //                 {isBuffering ? (
-// //                   <ActivityIndicator size="large" color="white" />
-// //                 ) : player.playing ? (
-// //                   <Ionicons name="pause" size={60} color="white" />
-// //                 ) : (
-// //                   <Ionicons name="play" size={60} color="white" />
-// //                 )}
-// //               </TouchableOpacity>
-
-// //               {/* Bottom controls */}
-// //               <View style={styles.bottomControls}>
-// //                 <Text style={styles.timeText}>
-// //                   {formatTime(player.currentTime * 1000)} / {formatTime(player.duration * 1000)}
-// //                 </Text>
-
-// //                 <Slider
-// //                   style={styles.progressBar}
-// //                   minimumValue={0}
-// //                   maximumValue={1}
-// //                   value={progress}
-// //                   minimumTrackTintColor="#e50914"
-// //                   maximumTrackTintColor="#444"
-// //                   thumbTintColor="#e50914"
-// //                   onSlidingComplete={onSliderComplete}
-// //                 />
-
-// //                 <View style={styles.actionRow}>
-// //                   <TouchableOpacity onPress={toggleMute}>
-// //                     <Ionicons
-// //                       name={player.muted ? "volume-mute-sharp" : "volume-high-sharp"}
-// //                       size={28}
-// //                       color="white"
-// //                     />
-// //                   </TouchableOpacity>
-
-// //                   <TouchableOpacity onPress={() => navigation.goBack()}>
-// //                     <Ionicons name="close" size={32} color="white" />
-// //                   </TouchableOpacity>
-// //                 </View>
-// //               </View>
-// //             </View>
-// //           </TouchableOpacity>
-// //         )}
-// //       </View>
-
-// //       {/* Video Info & Up Next */}
-// //       <View style={styles.infoContainer}>
-// //         <Text style={styles.title}>{videoData.title}</Text>
-// //         <Text style={styles.meta}>Blender Foundation • 12M views • 3 years ago</Text>
-
-// //         <Text style={styles.upNextTitle}>Up next</Text>
-
-// //         {UP_NEXT.map((vid) => (
-// //           <TouchableOpacity
-// //             key={vid.id}
-// //             style={styles.upNextItem}
-// //             onPress={() => navigation.navigate('VideoDetail', { id: vid.id, item: vid })}
-// //           >
-// //             <Image source={{ uri: getVideoEntry(vid.id).poster }} style={styles.thumbnail} />
-// //             <View style={styles.upNextInfo}>
-// //               <Text style={styles.upNextText} numberOfLines={2}>
-// //                 {vid.title}
-// //               </Text>
-// //               <Text style={styles.upNextMeta}>
-// //                 {vid.channel} • {vid.views} • {vid.time}
-// //               </Text>
-// //             </View>
-// //           </TouchableOpacity>
-// //         ))}
-// //       </View>
-// //     </View>
-// //   );
-// // }
-
-// // const styles = StyleSheet.create({
-// //   container: { flex: 1, backgroundColor: '#000' },
-// //   videoContainer: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
-// //   video: { flex: 1 },
-// //   controlsOverlay: {
-// //     ...StyleSheet.absoluteFillObject,
-// //     justifyContent: 'flex-end',
-// //     backgroundColor: 'rgba(0,0,0,0.3)', // optional light overlay
-// //   },
-// //   centerPlay: {
-// //     position: 'absolute',
-// //     top: '50%',
-// //     left: '50%',
-// //     marginLeft: -30,
-// //     marginTop: -30,
-// //   },
-// //   bottomControls: { padding: 16, backgroundColor: 'rgba(0,0,0,0.7)' },
-// //   progressBar: { width: '100%', height: 40 },
-// //   timeText: { color: 'white', fontSize: 14, marginBottom: 6 },
-// //   actionRow: {
-// //     flexDirection: 'row',
-// //     justifyContent: 'space-between',
-// //     alignItems: 'center',
-// //     marginTop: 8,
-// //   },
-// //   infoContainer: { padding: 16 },
-// //   title: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
-// //   meta: { color: '#aaa', fontSize: 14, marginBottom: 20 },
-// //   upNextTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginTop: 12, marginBottom: 12 },
-// //   upNextItem: { flexDirection: 'row', marginBottom: 16 },
-// //   thumbnail: { width: 140, height: 80, borderRadius: 6 },
-// //   upNextInfo: { flex: 1, marginLeft: 12 },
-// //   upNextText: { color: 'white', fontSize: 14, fontWeight: '500' },
-// //   upNextMeta: { color: '#aaa', fontSize: 12, marginTop: 4 },
-// // });
-
-// // export default memo(VideoDetail);
-
-// // import React, { useState, useEffect, memo } from 'react';
-// // import {
-// //   View,
-// //   Text,
-// //   Image,
-// //   TouchableOpacity,
-// //   StyleSheet,
-// //   ActivityIndicator,
-// //   ScrollView,
-// // } from 'react-native';
-// // import { VideoView, useVideoPlayer } from 'expo-video';
-// // import { useEvent } from 'expo';
-// // import Slider from '@react-native-community/slider';
-// // import { Ionicons } from '@expo/vector-icons';
-// // import * as ScreenOrientation from 'expo-screen-orientation';
-
-// // const VIDEO_POOL = [
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg",
-// //   },
-// //   {
-// //     uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-// //     poster: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg",
-// //   },
-// // ];
-
-// // const UP_NEXT = [
-// //   { id: 2, title: "Sintel – Short Fantasy Film", channel: "Blender Foundation", views: "4.2M", time: "2 days ago" },
-// //   { id: 3, title: "Elephants Dream – Surreal Animation", channel: "Blender Foundation", views: "1.8M", time: "1 week ago" },
-// //   { id: 4, title: "Tears of Steel – Post-Apocalyptic CGI", channel: "Blender Foundation", views: "3.1M", time: "5 days ago" },
-// // ];
-
-// // function getVideoEntry(id) {
-// //   const idx = (Number(id) || 0) % VIDEO_POOL.length;
-// //   return VIDEO_POOL[idx];
-// // }
-
-// // // player se seconds aate hain, hum unhe "m:ss" format mein dikhate hain
-// // function formatTime(seconds) {
-// //   if (!seconds || isNaN(seconds)) return "0:00";
-// //   const min = Math.floor(seconds / 60);
-// //   const sec = Math.floor(seconds % 60);
-// //   return `${min}:${sec.toString().padStart(2, '0')}`;
-// // }
-
-// // function VideoDetail({ route, navigation }) {
-// //   const { id, item } = route.params || {};
-// //   const videoData = item || { title: "Big Buck Bunny" };
-// //   const entry = getVideoEntry(id);
-
-// //   // ---- mute ke liye alag state rakhni padti hai ----
-// //   const [isMuted, setIsMuted] = useState(false);
-// //   const [showControls, setShowControls] = useState(true);
-// //   const [isBuffering, setIsBuffering] = useState(false);
-// //   const [currentTime, setCurrentTime] = useState(0);
-// //   const [duration, setDuration] = useState(0);
-// //   const [isPlaying, setIsPlaying] = useState(true);
-// //   const [isSeeking, setIsSeeking] = useState(false);
-
-// //   const player = useVideoPlayer(
-// //     { uri: entry.uri },
-// //     (p) => {
-// //       p.loop = false;
-// //       p.muted = false;
-// //       p.play();
-// //     }
-// //   );
-
-// //   // ---- expo-video ka sahi tarika: useEvent se status sunna ----
-// //   useEvent(player, 'playingChange', (payload) => {
-// //     setIsPlaying(payload.isPlaying);
-// //   });
-
-// //   useEvent(player, 'statusChange', (payload) => {
-// //     setIsBuffering(payload.status === 'loading');
-// //   });
-
-// //   // currentTime aur duration track karne ke liye timeUpdate event
-// //   useEvent(player, 'timeUpdate', (payload) => {
-// //     if (!isSeeking) {
-// //       setCurrentTime(payload.currentTime ?? 0);
-// //       setDuration(payload.duration ?? 0);
-// //     }
-// //   });
-
-// //   // Controls auto-hide
-// //   useEffect(() => {
-// //     if (!showControls) return;
-// //     const timer = setTimeout(() => setShowControls(false), 4500);
-// //     return () => clearTimeout(timer);
-// //   }, [showControls]);
-
-// //   // Orientation unlock on mount, relock on unmount
-// //   useEffect(() => {
-// //     ScreenOrientation.unlockAsync();
-// //     return () => {
-// //       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-// //     };
-// //   }, []);
-
-// //   const togglePlayPause = () => {
-// //     if (player.playing) {
-// //       player.pause();
-// //     } else {
-// //       player.play();
-// //     }
-// //   };
-
-// //   const toggleMute = () => {
-// //     const next = !isMuted;
-// //     player.muted = next;
-// //     setIsMuted(next);
-// //   };
-
-// //   const onSliderValueChange = () => {
-// //     setIsSeeking(true);
-// //   };
-
-// //   const onSliderComplete = (value) => {
-// //     const seekTo = value * (duration || 0);
-// //     player.currentTime = seekTo;
-// //     setCurrentTime(seekTo);
-// //     setIsSeeking(false);
-// //   };
-
-// //   const progress = duration > 0 ? currentTime / duration : 0;
-
-// //   return (
-// //     <ScrollView style={styles.container} bounces={false}>
-// //       {/* ---- Video Player ---- */}
-// //       <View style={styles.videoContainer}>
-// //         <VideoView
-// //           player={player}
-// //           style={styles.video}
-// //           contentFit="contain"
-// //           nativeControls={false}
-// //           allowsPictureInPicture
-// //           startsPictureInPictureAutomatically={false}
-// //         />
-
-// //         {/* Controls Overlay — tap se toggle */}
-// //         <TouchableOpacity
-// //           style={StyleSheet.absoluteFill}
-// //           activeOpacity={1}
-// //           onPress={() => setShowControls((prev) => !prev)}
-// //         >
-// //           {showControls && (
-// //             <View style={styles.controlsOverlay}>
-// //               {/* Center Play/Pause */}
-// //               <TouchableOpacity
-// //                 style={styles.centerPlay}
-// //                 onPress={(e) => {
-// //                   e.stopPropagation();
-// //                   togglePlayPause();
-// //                 }}
-// //               >
-// //                 {isBuffering ? (
-// //                   <ActivityIndicator size="large" color="white" />
-// //                 ) : isPlaying ? (
-// //                   <Ionicons name="pause" size={60} color="white" />
-// //                 ) : (
-// //                   <Ionicons name="play" size={60} color="white" />
-// //                 )}
-// //               </TouchableOpacity>
-
-// //               {/* Bottom Controls */}
-// //               <View style={styles.bottomControls}>
-// //                 <Text style={styles.timeText}>
-// //                   {formatTime(currentTime)} / {formatTime(duration)}
-// //                 </Text>
-
-// //                 <Slider
-// //                   style={styles.progressBar}
-// //                   minimumValue={0}
-// //                   maximumValue={1}
-// //                   value={progress}
-// //                   minimumTrackTintColor="#e50914"
-// //                   maximumTrackTintColor="#444"
-// //                   thumbTintColor="#e50914"
-// //                   onValueChange={onSliderValueChange}
-// //                   onSlidingComplete={onSliderComplete}
-// //                 />
-
-// //                 <View style={styles.actionRow}>
-// //                   <TouchableOpacity
-// //                     onPress={(e) => {
-// //                       e.stopPropagation();
-// //                       toggleMute();
-// //                     }}
-// //                   >
-// //                     <Ionicons
-// //                       name={isMuted ? "volume-mute-sharp" : "volume-high-sharp"}
-// //                       size={28}
-// //                       color="white"
-// //                     />
-// //                   </TouchableOpacity>
-
-// //                   <TouchableOpacity
-// //                     onPress={(e) => {
-// //                       e.stopPropagation();
-// //                       navigation.goBack();
-// //                     }}
-// //                   >
-// //                     <Ionicons name="close" size={32} color="white" />
-// //                   </TouchableOpacity>
-// //                 </View>
-// //               </View>
-// //             </View>
-// //           )}
-// //         </TouchableOpacity>
-// //       </View>
-
-// //       {/* ---- Video Info & Up Next ---- */}
-// //       <View style={styles.infoContainer}>
-// //         <Text style={styles.title}>{videoData.title}</Text>
-// //         <Text style={styles.meta}>Blender Foundation • 12M views • 3 years ago</Text>
-
-// //         <Text style={styles.upNextTitle}>Up next</Text>
-
-// //         {UP_NEXT.map((vid) => (
-// //           <TouchableOpacity
-// //             key={vid.id}
-// //             style={styles.upNextItem}
-// //      onPress={() =>
-// //   navigation.navigate('VideoDetail', {
-// //     id: vid.id,
-// //     item: vid,
-// //   })}
-// //           >
-// //             <Image
-// //               source={{ uri: getVideoEntry(vid.id).poster }}
-// //               style={styles.thumbnail}
-// //             />
-// //             <View style={styles.upNextInfo}>
-// //               <Text style={styles.upNextText} numberOfLines={2}>
-// //                 {vid.title}
-// //               </Text>
-// //               <Text style={styles.upNextMeta}>
-// //                 {vid.channel} • {vid.views} • {vid.time}
-// //               </Text>
-// //             </View>
-// //           </TouchableOpacity>
-// //         ))}
-// //       </View>
-// //     </ScrollView>
-// //   );
-// // }
-
-// // const styles = StyleSheet.create({
-// //   container: {
-// //     flex: 1,
-// //     backgroundColor: '#000',
-// //   },
-// //   videoContainer: {
-// //     width: '100%',
-// //     aspectRatio: 16 / 9,
-// //     backgroundColor: '#000',
-// //   },
-// //   video: {
-// //     flex: 1,
-// //   },
-// //   controlsOverlay: {
-// //     ...StyleSheet.absoluteFillObject,
-// //     justifyContent: 'flex-end',
-// //     backgroundColor: 'rgba(0,0,0,0.35)',
-// //   },
-// //   centerPlay: {
-// //     position: 'absolute',
-// //     top: '50%',
-// //     left: '50%',
-// //     marginLeft: -30,
-// //     marginTop: -30,
-// //   },
-// //   bottomControls: {
-// //     padding: 16,
-// //     backgroundColor: 'rgba(0,0,0,0.6)',
-// //   },
-// //   progressBar: {
-// //     width: '100%',
-// //     height: 40,
-// //   },
-// //   timeText: {
-// //     color: 'white',
-// //     fontSize: 13,
-// //     marginBottom: 4,
-// //   },
-// //   actionRow: {
-// //     flexDirection: 'row',
-// //     justifyContent: 'space-between',
-// //     alignItems: 'center',
-// //     marginTop: 6,
-// //   },
-// //   infoContainer: {
-// //     padding: 16,
-// //   },
-// //   title: {
-// //     color: 'white',
-// //     fontSize: 20,
-// //     fontWeight: 'bold',
-// //     marginBottom: 6,
-// //   },
-// //   meta: {
-// //     color: '#aaa',
-// //     fontSize: 14,
-// //     marginBottom: 20,
-// //   },
-// //   upNextTitle: {
-// //     color: 'white',
-// //     fontSize: 18,
-// //     fontWeight: 'bold',
-// //     marginTop: 12,
-// //     marginBottom: 12,
-// //   },
-// //   upNextItem: {
-// //     flexDirection: 'row',
-// //     marginBottom: 16,
-// //   },
-// //   thumbnail: {
-// //     width: 140,
-// //     height: 80,
-// //     borderRadius: 6,
-// //   },
-// //   upNextInfo: {
-// //     flex: 1,
-// //     marginLeft: 12,
-// //   },
-// //   upNextText: {
-// //     color: 'white',
-// //     fontSize: 14,
-// //     fontWeight: '500',
-// //   },
-// //   upNextMeta: {
-// //     color: '#aaa',
-// //     fontSize: 12,
-// //     marginTop: 4,
-// //   },
-// // });
-
-// // export default memo(VideoDetail);
-
-
-
-// import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
-// import {
-//   View,
-//   Text,
-//   Image,
-//   TouchableOpacity,
-//   StyleSheet,
-//   ActivityIndicator,
-//   ScrollView,
-//   Platform,
-// } from 'react-native';
-// import { VideoView, useVideoPlayer } from 'expo-video';
-// import { useEvent } from 'expo';
-// import Slider from '@react-native-community/slider';
-// import { Ionicons } from '@expo/vector-icons';
-// import * as ScreenOrientation from 'expo-screen-orientation';
-
-// const VIDEO_POOL = [
-//   {
-//     uri: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-//     poster: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
-//   },
-//   {
-//     uri: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-//     poster: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg',
-//   },
-//   {
-//     uri: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-//     poster: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg',
-//   },
-//   {
-//     uri: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-//     poster: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg',
-//   },
-// ];
-
-// const UP_NEXT = [
-//   { id: 2, title: 'Sintel – Short Fantasy Film', channel: 'Blender Foundation', views: '4.2M', time: '2 days ago' },
-//   { id: 3, title: 'Elephants Dream – Surreal Animation', channel: 'Blender Foundation', views: '1.8M', time: '1 week ago' },
-//   { id: 4, title: 'Tears of Steel – Post-Apocalyptic CGI', channel: 'Blender Foundation', views: '3.1M', time: '5 days ago' },
-// ];
-
-// function getVideoEntry(id) {
-//   const idx = (Number(id) || 0) % VIDEO_POOL.length;
-//   return VIDEO_POOL[idx];
-// }
-
-// function formatTime(seconds) {
-//   if (!seconds || isNaN(seconds) || seconds <= 0) return '0:00';
-//   const min = Math.floor(seconds / 60);
-//   const sec = Math.floor(seconds % 60);
-//   return `${min}:${sec.toString().padStart(2, '0')}`;
-// }
-
-// function VideoDetail({ route, navigation }) {
-//   const { id, item } = route.params || {};
-//   const videoData = item || { title: 'Big Buck Bunny' };
-//   const entry = getVideoEntry(id);
-
-//   const [isMuted, setIsMuted]           = useState(false);
-//   const [showControls, setShowControls] = useState(true);
-//   const [isBuffering, setIsBuffering]   = useState(true);
-//   const [currentTime, setCurrentTime]   = useState(0);
-//   const [duration, setDuration]         = useState(0);
-//   const [isPlaying, setIsPlaying]       = useState(false);
-
-//   // Refs — never go stale inside event callbacks
-//   const isSeekingRef  = useRef(false);
-//   const durationRef   = useRef(0);
-//   const isMountedRef  = useRef(true);
-
-//   // ─── Player ───────────────────────────────────────────────
-//   const player = useVideoPlayer(entry.uri, (p) => {
-//     p.loop   = false;
-//     p.muted  = false;
-//     p.play();
-//   });
-
-//   // Keep durationRef in sync so onSliderComplete never reads stale value
-//   useEffect(() => {
-//     durationRef.current = duration;
-//   }, [duration]);
-
-//   // Cleanup flag
-//   useEffect(() => {
-//     isMountedRef.current = true;
-//     return () => {
-//       isMountedRef.current = false;
-//     };
-//   }, []);
-
-//   // ─── Reload when "Up Next" is tapped (id changes) ─────────
-//   useEffect(() => {
-//     if (!player) return;
-//     try {
-//       player.replace(entry.uri);
-//       player.play();
-//     } catch (e) {
-//       console.warn('player.replace error:', e);
-//     }
-//     setCurrentTime(0);
-//     setDuration(0);
-//     durationRef.current   = 0;
-//     isSeekingRef.current  = false;
-//     setIsPlaying(true);
-//     setIsBuffering(true);
-//   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-//   // ─── Orientation ──────────────────────────────────────────
-//   useEffect(() => {
-//     ScreenOrientation.unlockAsync().catch(() => {});
-//     return () => {
-//       ScreenOrientation.lockAsync(
-//         ScreenOrientation.OrientationLock.PORTRAIT_UP
-//       ).catch(() => {});
-//     };
-//   }, []);
-
-//   // ─── Controls auto-hide ───────────────────────────────────
-//   useEffect(() => {
-//     if (!showControls) return;
-//     const t = setTimeout(() => setShowControls(false), 4500);
-//     return () => clearTimeout(t);
-//   }, [showControls]);
-
-//   // ─── Player Events ────────────────────────────────────────
-//   useEvent(player, 'playingChange', (payload) => {
-//     if (isMountedRef.current) setIsPlaying(payload?.isPlaying ?? false);
-//   });
-
-//   useEvent(player, 'statusChange', (payload) => {
-//     if (isMountedRef.current) {
-//       const status = payload?.status;
-//       setIsBuffering(status === 'loading' || status === 'idle');
-//     }
-//   });
-
-//   useEvent(player, 'timeUpdate', (payload) => {
-//     if (!isMountedRef.current || isSeekingRef.current) return;
-//     const t = payload?.currentTime ?? 0;
-//     const d = payload?.duration   ?? 0;
-//     setCurrentTime(t);
-//     if (d > 0) {
-//       setDuration(d);
-//       durationRef.current = d;
-//     }
-//   });
-
-//   // ─── Handlers ─────────────────────────────────────────────
-//   const togglePlayPause = useCallback(() => {
-//     try {
-//       if (player.playing) {
-//         player.pause();
-//       } else {
-//         player.play();
-//       }
-//     } catch (e) {
-//       console.warn('togglePlayPause error:', e);
-//     }
-//   }, [player]);
-
-//   const toggleMute = useCallback(() => {
-//     setIsMuted((prev) => {
-//       const next = !prev;
-//       try { player.muted = next; } catch (e) {}
-//       return next;
-//     });
-//   }, [player]);
-
-//   const onSlidingStart = useCallback(() => {
-//     isSeekingRef.current = true;
-//   }, []);
-
-//   const onSliderComplete = useCallback((value) => {
-//     const seekTo = value * (durationRef.current || 0);
-//     try {
-//       player.currentTime = seekTo;
-//     } catch (e) {
-//       console.warn('Seek error:', e);
-//     }
-//     setCurrentTime(seekTo);
-//     isSeekingRef.current = false;
-//   }, [player]);
-
-//   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
-
-//   // ─── Render ───────────────────────────────────────────────
-//   return (
-//     <ScrollView style={styles.container} bounces={false}>
-
-//       {/* ── Video Player ── */}
-//       <View style={styles.videoWrapper}>
-//         <VideoView
-//           player={player}
-//           style={StyleSheet.absoluteFill}
-//           contentFit="contain"
-//           nativeControls={false}
-//           allowsPictureInPicture={false}
-//           startsPictureInPictureAutomatically={false}
-//         />
-
-//         {/* Tap area — toggles controls */}
-//         <TouchableOpacity
-//           style={StyleSheet.absoluteFill}
-//           activeOpacity={1}
-//           onPress={() => setShowControls((p) => !p)}
-//         />
-
-//         {/* Controls overlay — sits on top of tap area */}
-//         {showControls && (
-//           <View style={styles.controlsOverlay} pointerEvents="box-none">
-
-//             {/* Center play/pause */}
-//             <TouchableOpacity
-//               style={styles.centerPlay}
-//               onPress={togglePlayPause}
-//               hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
-//             >
-//               {isBuffering
-//                 ? <ActivityIndicator size="large" color="white" />
-//                 : isPlaying
-//                   ? <Ionicons name="pause" size={56} color="white" />
-//                   : <Ionicons name="play"  size={56} color="white" />
-//               }
-//             </TouchableOpacity>
-
-//             {/* Bottom bar */}
-//             <View style={styles.bottomControls}>
-//               <Text style={styles.timeText}>
-//                 {formatTime(currentTime)} / {formatTime(duration)}
-//               </Text>
-
-//               <Slider
-//                 style={styles.progressBar}
-//                 minimumValue={0}
-//                 maximumValue={1}
-//                 value={progress}
-//                 minimumTrackTintColor="#e50914"
-//                 maximumTrackTintColor="#555"
-//                 thumbTintColor="#e50914"
-//                 onSlidingStart={onSlidingStart}
-//                 onSlidingComplete={onSliderComplete}
-//               />
-
-//               <View style={styles.actionRow}>
-//                 <TouchableOpacity
-//                   onPress={toggleMute}
-//                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-//                 >
-//                   <Ionicons
-//                     name={isMuted ? 'volume-mute-sharp' : 'volume-high-sharp'}
-//                     size={26}
-//                     color="white"
-//                   />
-//                 </TouchableOpacity>
-
-//                 <TouchableOpacity
-//                   onPress={() => navigation.goBack()}
-//                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-//                 >
-//                   <Ionicons name="close" size={30} color="white" />
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-//           </View>
-//         )}
-//       </View>
-
-//       {/* ── Info & Up Next ── */}
-//       <View style={styles.infoContainer}>
-//         <Text style={styles.title}>{videoData.title}</Text>
-//         <Text style={styles.meta}>Blender Foundation • 12M views • 3 years ago</Text>
-
-//         <Text style={styles.upNextTitle}>Up next</Text>
-
-//         {UP_NEXT.map((vid) => (
-//           <TouchableOpacity
-//             key={vid.id}
-//             style={styles.upNextItem}
-//             activeOpacity={0.75}
-//             onPress={() =>
-//               navigation.push('VideoDetail', { id: vid.id, item: vid })
-//             }
-//           >
-//             <Image
-//               source={{ uri: getVideoEntry(vid.id).poster }}
-//               style={styles.thumbnail}
-//               resizeMode="cover"
-//             />
-//             <View style={styles.upNextInfo}>
-//               <Text style={styles.upNextText} numberOfLines={2}>
-//                 {vid.title}
-//               </Text>
-//               <Text style={styles.upNextMeta}>
-//                 {vid.channel} • {vid.views} • {vid.time}
-//               </Text>
-//             </View>
-//           </TouchableOpacity>
-//         ))}
-//       </View>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#000',
-//   },
-//   // ── Use a fixed aspectRatio wrapper so video + overlay stack correctly
-//   videoWrapper: {
-//     width: '100%',
-//     aspectRatio: 16 / 9,
-//     backgroundColor: '#000',
-//     // overflow hidden so children don't bleed out
-//     overflow: 'hidden',
-//   },
-//   controlsOverlay: {
-//     ...StyleSheet.absoluteFillObject,
-//     justifyContent: 'flex-end',
-//     backgroundColor: 'rgba(0,0,0,0.38)',
-//   },
-//   centerPlay: {
-//     position: 'absolute',
-//     alignSelf: 'center',
-//     top: '35%',
-//   },
-//   bottomControls: {
-//     padding: 14,
-//     backgroundColor: 'rgba(0,0,0,0.55)',
-//   },
-//   progressBar: {
-//     width: '100%',
-//     height: 36,
-//     marginVertical: 2,
-//   },
-//   timeText: {
-//     color: '#ddd',
-//     fontSize: 12,
-//     marginBottom: 2,
-//   },
-//   actionRow: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     marginTop: 4,
-//   },
-//   infoContainer: {
-//     padding: 16,
-//   },
-//   title: {
-//     color: 'white',
-//     fontSize: 19,
-//     fontWeight: 'bold',
-//     marginBottom: 6,
-//   },
-//   meta: {
-//     color: '#aaa',
-//     fontSize: 13,
-//     marginBottom: 20,
-//   },
-//   upNextTitle: {
-//     color: 'white',
-//     fontSize: 17,
-//     fontWeight: 'bold',
-//     marginBottom: 12,
-//   },
-//   upNextItem: {
-//     flexDirection: 'row',
-//     marginBottom: 16,
-//     alignItems: 'center',
-//   },
-//   thumbnail: {
-//     width: 130,
-//     height: 74,
-//     borderRadius: 6,
-//     backgroundColor: '#222',
-//   },
-//   upNextInfo: {
-//     flex: 1,
-//     marginLeft: 12,
-//   },
-//   upNextText: {
-//     color: 'white',
-//     fontSize: 13,
-//     fontWeight: '500',
-//     lineHeight: 18,
-//   },
-//   upNextMeta: {
-//     color: '#aaa',
-//     fontSize: 12,
-//     marginTop: 4,
-//   },
-// });
-
-// export default memo(VideoDetail);
-
-import React, { useState, useEffect, useCallback, useRef, memo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   Image,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Dimensions,
   ActivityIndicator,
-  ScrollView,
+  Platform,
+  StatusBar,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEvent } from "expo";
 import Slider from "@react-native-community/slider";
@@ -1011,431 +23,403 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ScreenOrientation from "expo-screen-orientation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BACKEND_URL = "https://bharat-pay-3.onrender.com";
 const API_BASE = `${BACKEND_URL}/api/uservideo`;
 
-const VIDEO_POOL = [
-  {
-    uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    poster:
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg",
-  },
-  {
-    uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-    poster:
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg",
-  },
-  {
-    uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    poster:
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg",
-  },
-  {
-    uri: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    poster:
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg",
-  },
-];
+const FALLBACK_VIDEO = {
+  id: 1,
+  title: "Big Buck Bunny",
+  channel: "Blender Foundation",
+  description: "This video is being loaded from the server.",
+  views: 0,
+  videoUrl:
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  thumbnail:
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg",
+};
 
-const UP_NEXT = [
-  {
-    id: 2,
-    title: "Sintel – Short Fantasy Film",
-    channel: "Blender Foundation",
-    views: "4.2M",
-    time: "2 days ago",
-  },
-  {
-    id: 3,
-    title: "Elephants Dream – Surreal Animation",
-    channel: "Blender Foundation",
-    views: "1.8M",
-    time: "1 week ago",
-  },
-  {
-    id: 4,
-    title: "Tears of Steel – Post-Apocalyptic CGI",
-    channel: "Blender Foundation",
-    views: "3.1M",
-    time: "5 days ago",
-  },
-];
+const formatTime = (seconds) => {
+  if (!seconds || Number.isNaN(Number(seconds))) return "0:00";
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds)));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+};
 
-function getVideoEntry(id) {
-  const idx = (Number(id) || 0) % VIDEO_POOL.length;
-  return VIDEO_POOL[idx];
-}
+const resolveMediaUrl = (value) => {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
 
-function formatTime(seconds) {
-  if (!seconds || isNaN(seconds) || seconds <= 0) return "0:00";
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${min}:${sec.toString().padStart(2, "0")}`;
-}
+  const normalized = String(value).replace(/\\/g, "/");
+  if (normalized.startsWith("uploads/")) {
+    return `${BACKEND_URL}/${normalized}`;
+  }
+  if (normalized.includes("uploads/")) {
+    return `${BACKEND_URL}/${normalized.split("uploads/").pop()}`;
+  }
+  if (normalized.startsWith("/uploads/")) {
+    return `${BACKEND_URL}${normalized}`;
+  }
 
-function getVideoUrl(path) {
-  if (!path) return null;
-  if (String(path).startsWith("http")) return path;
-  return `${BACKEND_URL}/${String(path).replace(/\\/g, "/")}`;
-}
+  return `${BACKEND_URL}/${normalized}`;
+};
 
-function VideoDetail({ route, navigation }) {
-  const { id, item } = route.params || {};
-  const videoData = item || { title: "Big Buck Bunny" };
-  const entry = getVideoEntry(id);
+export default function VideoDetailScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const routeId = route?.params?.id ?? route?.params?.videoId ?? 1;
+  const routeVideo = route?.params?.item ?? route?.params?.video ?? null;
 
-  // Prefer real backend video URL if available
-  const realVideoUrl =
-    getVideoUrl(
-      videoData.videofile ||
-        videoData.videoUrl ||
-        videoData.video ||
-        videoData.uri
-    ) || entry.uri;
-
-  const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const [isBuffering, setIsBuffering] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [videoDetails, setVideoDetails] = useState(
+    routeVideo || FALLBACK_VIDEO,
+  );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // Like / Dislike / Comments
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
-  const [likesCount, setLikesCount] = useState(videoData.likes || 0);
-  const [dislikesCount, setDislikesCount] = useState(videoData.dislikes || 0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [likesCount, setLikesCount] = useState(
+    Number(routeVideo?.likesCount ?? routeVideo?.likes ?? 0),
+  );
+  const [dislikesCount, setDislikesCount] = useState(
+    Number(routeVideo?.dislikesCount ?? routeVideo?.dislikes ?? 0),
+  );
+  const [liked, setLiked] = useState(Boolean(routeVideo?.isLiked));
+  const [disliked, setDisliked] = useState(Boolean(routeVideo?.isDisliked));
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
-  const [postingComment, setPostingComment] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const controlsTimer = useRef(null);
 
-  const isSeekingRef = useRef(false);
-  const durationRef = useRef(0);
-  const isMountedRef = useRef(true);
+  const resolvedVideoUrl = useMemo(() => {
+    const candidate =
+      videoDetails?.videoUrl ||
+      videoDetails?.video ||
+      videoDetails?.videofile ||
+      videoDetails?.uri ||
+      FALLBACK_VIDEO.videoUrl;
 
-  // ─── Player ───────────────────────────────────────────────
-  const player = useVideoPlayer(realVideoUrl, (p) => {
+    return resolveMediaUrl(candidate) || FALLBACK_VIDEO.videoUrl;
+  }, [videoDetails]);
+
+  const resolvedThumbnail = useMemo(() => {
+    const candidate =
+      videoDetails?.thumbnail ||
+      videoDetails?.thumb ||
+      videoDetails?.poster ||
+      FALLBACK_VIDEO.thumbnail;
+
+    return resolveMediaUrl(candidate) || FALLBACK_VIDEO.thumbnail;
+  }, [videoDetails]);
+
+  const player = useVideoPlayer(resolvedVideoUrl, (p) => {
     p.loop = false;
     p.muted = false;
     p.play();
   });
 
   useEffect(() => {
-    durationRef.current = duration;
-  }, [duration]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  // ─── Reload when id changes — use replaceAsync (fixes iOS warning) ───
-  useEffect(() => {
-    if (!player) return;
-
-    const load = async () => {
-      try {
-        await player.replaceAsync(realVideoUrl); // ✅ replaceAsync
-        player.play();
-      } catch (e) {
-        console.warn("player.replaceAsync error:", e);
-      }
-      setCurrentTime(0);
-      setDuration(0);
-      durationRef.current = 0;
-      isSeekingRef.current = false;
-      setIsPlaying(true);
-      setIsBuffering(true);
-    };
-
-    load();
-  }, [id, realVideoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Orientation ──────────────────────────────────────────
-  useEffect(() => {
     ScreenOrientation.unlockAsync().catch(() => {});
     return () => {
       ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
       ).catch(() => {});
     };
   }, []);
 
-  // ─── Controls auto-hide ───────────────────────────────────
   useEffect(() => {
-    if (!showControls) return;
-    const t = setTimeout(() => setShowControls(false), 4500);
-    return () => clearTimeout(t);
-  }, [showControls]);
+    if (!player || !resolvedVideoUrl) return;
 
-  // ─── Player Events ────────────────────────────────────────
-  useEvent(player, "playingChange", (payload) => {
-    if (isMountedRef.current) setIsPlaying(payload?.isPlaying ?? false);
-  });
+    const load = async () => {
+      try {
+        await player.replaceAsync(resolvedVideoUrl);
+        player.play();
+      } catch (error) {
+        console.warn("Video player load error:", error);
+      }
+      setCurrentTime(0);
+      setDuration(0);
+      setIsPlaying(true);
+    };
 
-  useEvent(player, "statusChange", (payload) => {
-    if (isMountedRef.current) {
-      const status = payload?.status;
-      setIsBuffering(status === "loading" || status === "idle");
+    load();
+  }, [player, resolvedVideoUrl]);
+
+  useEffect(() => {
+    if (!player) return;
+    try {
+      player.muted = isMuted;
+    } catch (error) {
+      console.warn("Muted toggle error:", error);
     }
+  }, [player, isMuted]);
+
+  useEvent(player, "playingChange", (payload) => {
+    setIsPlaying(Boolean(payload?.isPlaying));
   });
 
   useEvent(player, "timeUpdate", (payload) => {
-    if (!isMountedRef.current || isSeekingRef.current) return;
-    const t = payload?.currentTime ?? 0;
-    const d = payload?.duration ?? 0;
-    setCurrentTime(t);
-    if (d > 0) {
-      setDuration(d);
-      durationRef.current = d;
-    }
+    const nextTime = Number(payload?.currentTime || 0);
+    const nextDuration = Number(payload?.duration || 0);
+    setCurrentTime(nextTime);
+    if (nextDuration > 0) setDuration(nextDuration);
   });
 
-  // ─── Handlers ─────────────────────────────────────────────
-  const togglePlayPause = useCallback(() => {
-    try {
-      if (player.playing) player.pause();
-      else player.play();
-    } catch (e) {
-      console.warn("togglePlayPause error:", e);
-    }
-  }, [player]);
+  useEffect(() => {
+    const fetchVideoDetails = async () => {
+      if (!routeId) return;
 
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => {
-      const next = !prev;
       try {
-        player.muted = next;
-      } catch (e) {}
-      return next;
-    });
-  }, [player]);
+        setLoading(true);
+        const token = await AsyncStorage.getItem("token");
+        const response = await fetch(`${API_BASE}/${routeId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
 
-  const onSlidingStart = useCallback(() => {
-    isSeekingRef.current = true;
-  }, []);
-
-  const onSliderComplete = useCallback(
-    (value) => {
-      const seekTo = value * (durationRef.current || 0);
-      try {
-        player.currentTime = seekTo;
-      } catch (e) {
-        console.warn("Seek error:", e);
+        const data = await response.json().catch(() => ({}));
+        const payload = data?.video || data;
+        if (payload) {
+          setVideoDetails((prev) => ({ ...prev, ...payload }));
+          setLikesCount(Number(payload.likesCount ?? payload.likes ?? 0));
+          setDislikesCount(
+            Number(payload.dislikesCount ?? payload.dislikes ?? 0),
+          );
+          setLiked(Boolean(payload.isLiked));
+          setDisliked(Boolean(payload.isDisliked));
+        }
+      } catch (error) {
+        console.warn("Load video details error:", error);
+      } finally {
+        setLoading(false);
       }
-      setCurrentTime(seekTo);
-      isSeekingRef.current = false;
-    },
-    [player]
-  );
+    };
 
-  // ─── Like ─────────────────────────────────────────────────
+    const fetchComments = async () => {
+      if (!routeId) return;
+
+      try {
+        setCommentsLoading(true);
+        const token = await AsyncStorage.getItem("token");
+        const response = await fetch(`${API_BASE}/${routeId}/comments`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await response.json().catch(() => ({}));
+        const list = Array.isArray(data?.comments) ? data.comments : [];
+        setComments(list);
+      } catch (error) {
+        console.warn("Load comments error:", error);
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    fetchVideoDetails();
+    fetchComments();
+  }, [routeId]);
+
+  useEffect(() => {
+    if (!showControls) return undefined;
+    if (controlsTimer.current) clearTimeout(controlsTimer.current);
+    controlsTimer.current = setTimeout(() => setShowControls(false), 3000);
+    return () => clearTimeout(controlsTimer.current);
+  }, [showControls]);
+
+  const showControlsTemporarily = () => {
+    setShowControls(true);
+  };
+
+  const handleTogglePlayPause = () => {
+    try {
+      if (!player) return;
+      if (isPlaying) {
+        player.pause();
+      } else {
+        player.play();
+      }
+    } catch (error) {
+      console.warn("Play state error:", error);
+    }
+    showControlsTemporarily();
+  };
+
   const handleLike = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
-      Alert.alert("Login required", "Please login to like");
+      Alert.alert("Login required", "Please login to like this video.");
       return;
     }
+
     try {
-      const res = await fetch(`${API_BASE}/like/${id}`, {
+      const response = await fetch(`${API_BASE}/${routeId}/like`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      if (res.ok) {
-        if (liked) {
-          setLiked(false);
-          setLikesCount((c) => Math.max(0, c - 1));
-        } else {
-          setLiked(true);
-          setLikesCount((c) => c + 1);
-          if (disliked) {
-            setDisliked(false);
-            setDislikesCount((c) => Math.max(0, c - 1));
-          }
-        }
+      const data = await response.json().catch(() => ({}));
+
+      if (data?.success) {
+        setLikesCount(Number(data.likes ?? likesCount));
+        setDislikesCount(Number(data.dislikes ?? dislikesCount));
+        setLiked(Boolean(data.reaction === "like"));
+        setDisliked(Boolean(data.reaction === "dislike"));
       }
-    } catch (e) {
-      console.warn(e);
+    } catch (error) {
+      console.warn("Like error:", error);
     }
   };
 
-  // ─── Dislike ──────────────────────────────────────────────
   const handleDislike = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
-      Alert.alert("Login required", "Please login to dislike");
+      Alert.alert("Login required", "Please login to dislike this video.");
       return;
     }
+
     try {
-      const res = await fetch(`${API_BASE}/dislike/${id}`, {
+      const response = await fetch(`${API_BASE}/${routeId}/dislike`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      if (res.ok) {
-        if (disliked) {
-          setDisliked(false);
-          setDislikesCount((c) => Math.max(0, c - 1));
-        } else {
-          setDisliked(true);
-          setDislikesCount((c) => c + 1);
-          if (liked) {
-            setLiked(false);
-            setLikesCount((c) => Math.max(0, c - 1));
-          }
-        }
+      const data = await response.json().catch(() => ({}));
+
+      if (data?.success) {
+        setLikesCount(Number(data.likes ?? likesCount));
+        setDislikesCount(Number(data.dislikes ?? dislikesCount));
+        setLiked(Boolean(data.reaction === "like"));
+        setDisliked(Boolean(data.reaction === "dislike"));
       }
-    } catch (e) {
-      console.warn(e);
+    } catch (error) {
+      console.warn("Dislike error:", error);
     }
   };
 
-  // ─── Comments ─────────────────────────────────────────────
-  const fetchComments = useCallback(async () => {
-    if (!id) return;
-    try {
-      setCommentsLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`${API_BASE}/comments/${id}`, { headers });
-      if (res.ok) {
-        const data = await res.json();
-        setComments(data.comments || data || []);
-      }
-    } catch (e) {
-      console.warn(e);
-    } finally {
-      setCommentsLoading(false);
-    }
-  }, [id]);
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim() || !routeId) return;
 
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
-
-  const handlePostComment = async () => {
-    if (!commentText.trim()) return;
     const token = await AsyncStorage.getItem("token");
     if (!token) {
-      Alert.alert("Login required", "Please login to comment");
+      Alert.alert("Login required", "Please login to comment.");
       return;
     }
+
     try {
-      setPostingComment(true);
-      const res = await fetch(`${API_BASE}/comment/${id}`, {
+      setCommentLoading(true);
+      const response = await fetch(`${API_BASE}/${routeId}/comment`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: commentText.trim() }),
+        body: JSON.stringify({ commentText: commentText.trim() }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        const newComment = data.comment || {
-          _id: Date.now().toString(),
-          text: commentText.trim(),
-          user: { name: "You" },
-          createdAt: new Date().toISOString(),
-        };
-        setComments((prev) => [newComment, ...prev]);
+
+      const data = await response.json().catch(() => ({}));
+      if (data?.success) {
+        setComments((prev) => [
+          {
+            _id: Date.now().toString(),
+            text: commentText.trim(),
+            createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
         setCommentText("");
-      } else {
-        Alert.alert("Error", data.message || "Failed to post");
       }
-    } catch (e) {
-      Alert.alert("Error", "Something went wrong");
+    } catch (error) {
+      console.warn("Comment post error:", error);
     } finally {
-      setPostingComment(false);
+      setCommentLoading(false);
+    }
+  };
+
+  const handleSeek = (value) => {
+    if (!player || !duration) return;
+    try {
+      const seekTo = Math.max(0, Math.min(duration, value * duration));
+      player.currentTime = seekTo;
+      setCurrentTime(seekTo);
+    } catch (error) {
+      console.warn("Seek error:", error);
     }
   };
 
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
-  // ─── Render ───────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView style={styles.container} bounces={false}>
-        {/* ── Video Player ── */}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0f0f0f" />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.videoWrapper}>
           <VideoView
             player={player}
-            style={StyleSheet.absoluteFill}
+            style={styles.videoPlayer}
             contentFit="contain"
             nativeControls={false}
             allowsPictureInPicture={false}
             startsPictureInPictureAutomatically={false}
           />
 
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setShowControls((p) => !p)}
-          />
-
           {showControls && (
-            <View style={styles.controlsOverlay} pointerEvents="box-none">
+            <View style={styles.overlay} pointerEvents="box-none">
+              <View style={styles.topBar}>
+                <Text style={styles.videoTitle} numberOfLines={2}>
+                  {videoDetails?.title || FALLBACK_VIDEO.title}
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeBtn}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
               <TouchableOpacity
-                style={styles.centerPlay}
-                onPress={togglePlayPause}
-                hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
+                style={styles.centerPlayButton}
+                onPress={handleTogglePlayPause}
               >
-                {isBuffering ? (
-                  <ActivityIndicator size="large" color="white" />
-                ) : isPlaying ? (
-                  <Ionicons name="pause" size={56} color="white" />
+                {isPlaying ? (
+                  <Ionicons name="pause" size={52} color="#fff" />
                 ) : (
-                  <Ionicons name="play" size={56} color="white" />
+                  <Ionicons name="play" size={52} color="#fff" />
                 )}
               </TouchableOpacity>
 
               <View style={styles.bottomControls}>
-                <Text style={styles.timeText}>
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </Text>
-
                 <Slider
-                  style={styles.progressBar}
+                  style={styles.slider}
                   minimumValue={0}
                   maximumValue={1}
                   value={progress}
-                  minimumTrackTintColor="#e50914"
-                  maximumTrackTintColor="#555"
-                  thumbTintColor="#e50914"
-                  onSlidingStart={onSlidingStart}
-                  onSlidingComplete={onSliderComplete}
+                  minimumTrackTintColor="#ef4444"
+                  maximumTrackTintColor="#444"
+                  thumbTintColor="#ef4444"
+                  onSlidingStart={() => setShowControls(true)}
+                  onSlidingComplete={handleSeek}
                 />
 
-                <View style={styles.actionRow}>
-                  <TouchableOpacity
-                    onPress={toggleMute}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <Ionicons
-                      name={
-                        isMuted ? "volume-mute-sharp" : "volume-high-sharp"
-                      }
-                      size={26}
-                      color="white"
-                    />
-                  </TouchableOpacity>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeText}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </Text>
 
-                  <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <Ionicons name="close" size={30} color="white" />
+                  <TouchableOpacity onPress={() => setIsMuted((prev) => !prev)}>
+                    <Ionicons
+                      name={isMuted ? "volume-mute" : "volume-high"}
+                      size={20}
+                      color="#fff"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1443,337 +427,307 @@ function VideoDetail({ route, navigation }) {
           )}
         </View>
 
-        {/* ── Info ── */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>{videoData.title}</Text>
-          <Text style={styles.meta}>
-            {(videoData.views || 0).toLocaleString?.() || videoData.views || "0"}{" "}
-            views
-            {videoData.channel ? `  •  ${videoData.channel}` : ""}
-          </Text>
+        <View style={styles.infoCard}>
+          <View style={styles.channelRow}>
+            <Image
+              source={{ uri: resolvedThumbnail }}
+              style={styles.channelAvatar}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>
+                {videoDetails?.title || FALLBACK_VIDEO.title}
+              </Text>
+              <Text style={styles.meta}>
+                {(videoDetails?.views || 0).toLocaleString()} views •{" "}
+                {videoDetails?.createdAt
+                  ? new Date(videoDetails.createdAt).toLocaleDateString()
+                  : "Recently added"}
+              </Text>
+              <Text style={styles.channelName}>
+                {videoDetails?.channel?.name ||
+                  videoDetails?.channel ||
+                  "Channel"}
+              </Text>
+            </View>
+          </View>
 
-          {/* Like / Dislike / Share */}
-          <View style={styles.likeRow}>
+          <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.likeBtn, liked && styles.likeBtnActive]}
+              style={[styles.actionBtn, liked && styles.actionBtnActive]}
               onPress={handleLike}
             >
               <Ionicons
                 name={liked ? "thumbs-up" : "thumbs-up-outline"}
-                size={20}
-                color={liked ? "#ef4444" : "#fff"}
+                size={18}
+                color="#fff"
               />
-              <Text style={[styles.likeText, liked && { color: "#ef4444" }]}>
-                {likesCount > 0 ? likesCount : "Like"}
-              </Text>
+              <Text style={styles.actionText}>{likesCount}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.likeBtn, disliked && styles.likeBtnActive]}
+              style={[styles.actionBtn, disliked && styles.actionBtnActive]}
               onPress={handleDislike}
             >
               <Ionicons
                 name={disliked ? "thumbs-down" : "thumbs-down-outline"}
-                size={20}
-                color={disliked ? "#ef4444" : "#fff"}
+                size={18}
+                color="#fff"
               />
-              <Text
-                style={[styles.likeText, disliked && { color: "#ef4444" }]}
-              >
-                {dislikesCount > 0 ? dislikesCount : "Dislike"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.likeBtn}>
-              <Ionicons name="share-social-outline" size={20} color="#fff" />
-              <Text style={styles.likeText}>Share</Text>
+              <Text style={styles.actionText}>{dislikesCount}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Description */}
-          {videoData.description ? (
-            <View style={styles.descBox}>
-              <Text style={styles.descText}>{videoData.description}</Text>
-            </View>
-          ) : null}
-
-          {/* ── Comments ── */}
-          <Text style={styles.sectionTitle}>
-            Comments {comments.length > 0 ? `(${comments.length})` : ""}
+          <Text style={styles.description}>
+            {videoDetails?.description || FALLBACK_VIDEO.description}
           </Text>
+        </View>
+
+        <View style={styles.commentsCard}>
+          <Text style={styles.sectionTitle}>Comments</Text>
 
           <View style={styles.commentInputRow}>
             <TextInput
-              style={styles.commentInput}
-              placeholder="Add a comment..."
-              placeholderTextColor="#71717a"
               value={commentText}
               onChangeText={setCommentText}
+              style={styles.commentInput}
+              placeholder="Add a comment..."
+              placeholderTextColor="#888"
               multiline
             />
             <TouchableOpacity
               style={[
-                styles.sendBtn,
-                (!commentText.trim() || postingComment) && { opacity: 0.4 },
+                styles.postBtn,
+                (!commentText.trim() || commentLoading) && { opacity: 0.5 },
               ]}
-              onPress={handlePostComment}
-              disabled={!commentText.trim() || postingComment}
+              onPress={handleCommentSubmit}
+              disabled={!commentText.trim() || commentLoading}
             >
-              {postingComment ? (
+              {commentLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="send" size={18} color="#fff" />
+                <Text style={styles.postBtnText}>Post</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {commentsLoading ? (
-            <ActivityIndicator color="#ef4444" style={{ marginVertical: 16 }} />
-          ) : comments.length === 0 ? (
-            <Text style={styles.noComments}>No comments yet</Text>
-          ) : (
-            comments.map((c) => (
-              <View key={c._id || c.id} style={styles.commentItem}>
-                <View style={styles.commentAvatar}>
-                  <Ionicons name="person" size={18} color="#aaa" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.commentUser}>
-                    {c.user?.name || c.username || "User"}
-                    <Text style={styles.commentTime}>
-                      {"  "}
-                      {c.createdAt
-                        ? new Date(c.createdAt).toLocaleDateString()
-                        : ""}
-                    </Text>
-                  </Text>
-                  <Text style={styles.commentText}>
-                    {c.text || c.comment}
-                  </Text>
-                </View>
+            <ActivityIndicator color="#fff" style={{ marginVertical: 14 }} />
+          ) : comments.length > 0 ? (
+            comments.map((comment) => (
+              <View key={comment._id || comment.id} style={styles.commentItem}>
+                <Text style={styles.commentText}>
+                  {comment.text || comment.comment}
+                </Text>
+                <Text style={styles.commentMeta}>
+                  {comment.createdAt
+                    ? new Date(comment.createdAt).toLocaleDateString()
+                    : "Just now"}
+                </Text>
               </View>
             ))
+          ) : (
+            <Text style={styles.emptyText}>No comments yet.</Text>
           )}
-
-          {/* ── Up Next ── */}
-          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Up next</Text>
-
-          {UP_NEXT.map((vid) => (
-            <TouchableOpacity
-              key={vid.id}
-              style={styles.upNextItem}
-              activeOpacity={0.75}
-              onPress={() =>
-                navigation.push("VideoDetail", { id: vid.id, item: vid })
-              }
-            >
-              <Image
-                source={{ uri: getVideoEntry(vid.id).poster }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
-              <View style={styles.upNextInfo}>
-                <Text style={styles.upNextText} numberOfLines={2}>
-                  {vid.title}
-                </Text>
-                <Text style={styles.upNextMeta}>
-                  {vid.channel} • {vid.views} • {vid.time}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
         </View>
+
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#fff" />
+          </View>
+        )}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#0f0f0f",
+  },
+  scrollContent: {
+    paddingBottom: 32,
   },
   videoWrapper: {
-    width: "100%",
+    width: SCREEN_WIDTH,
     aspectRatio: 16 / 9,
     backgroundColor: "#000",
-    overflow: "hidden",
   },
-  controlsOverlay: {
+  videoPlayer: {
+    width: "100%",
+    height: "100%",
+  },
+  overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.38)",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
-  centerPlay: {
-    position: "absolute",
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 50 : 18,
+  },
+  videoTitle: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginRight: 12,
+  },
+  closeBtn: {
+    backgroundColor: "rgba(0,0,0,0.55)",
+    padding: 8,
+    borderRadius: 20,
+  },
+  centerPlayButton: {
     alignSelf: "center",
-    top: "35%",
+    padding: 10,
   },
   bottomControls: {
-    padding: 14,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
-  progressBar: {
+  slider: {
     width: "100%",
     height: 36,
-    marginVertical: 2,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   timeText: {
-    color: "#ddd",
+    color: "#fff",
     fontSize: 12,
-    marginBottom: 2,
+  },
+  infoCard: {
+    backgroundColor: "#18181b",
+    margin: 12,
+    borderRadius: 14,
+    padding: 14,
+  },
+  channelRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  channelAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#333",
+  },
+  title: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  meta: {
+    color: "#a1a1aa",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  channelName: {
+    color: "#fff",
+    fontSize: 14,
+    marginTop: 6,
+    fontWeight: "600",
   },
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  infoContainer: {
-    padding: 16,
-  },
-  title: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
-  meta: {
-    color: "#aaa",
-    fontSize: 13,
-    marginBottom: 14,
-  },
-
-  // Like row
-  likeRow: {
-    flexDirection: "row",
     gap: 10,
-    marginBottom: 14,
+    marginTop: 16,
+    flexWrap: "wrap",
   },
-  likeBtn: {
+  actionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#1a1a1a",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
   },
-  likeBtnActive: {
-    backgroundColor: "#3f1a1a",
+  actionBtnActive: {
+    backgroundColor: "rgba(239,68,68,0.2)",
   },
-  likeText: {
+  actionText: {
     color: "#fff",
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
   },
-
-  // Description
-  descBox: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  descText: {
+  description: {
     color: "#d4d4d8",
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 14,
   },
-
-  // Comments
+  commentsCard: {
+    backgroundColor: "#18181b",
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 14,
+    padding: 14,
+  },
   sectionTitle: {
-    color: "white",
+    color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
     marginBottom: 12,
   },
   commentInputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 10,
-    marginBottom: 16,
   },
   commentInput: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    minHeight: 44,
+    maxHeight: 110,
+    backgroundColor: "#0f0f0f",
     color: "#fff",
-    fontSize: 14,
-    maxHeight: 100,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#e50914",
-    justifyContent: "center",
+  postBtn: {
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    minWidth: 72,
     alignItems: "center",
   },
-  noComments: {
-    color: "#71717a",
-    fontSize: 14,
-    marginBottom: 12,
+  postBtnText: {
+    color: "#fff",
+    fontWeight: "700",
   },
   commentItem: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-  commentAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#272727",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  commentUser: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  commentTime: {
-    color: "#71717a",
-    fontWeight: "400",
-    fontSize: 12,
+    backgroundColor: "#0f0f0f",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#262626",
   },
   commentText: {
-    color: "#d4d4d8",
+    color: "#fff",
     fontSize: 14,
-    marginTop: 3,
-    lineHeight: 19,
   },
-
-  // Up next
-  upNextItem: {
-    flexDirection: "row",
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  thumbnail: {
-    width: 130,
-    height: 74,
-    borderRadius: 6,
-    backgroundColor: "#222",
-  },
-  upNextInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  upNextText: {
-    color: "white",
-    fontSize: 13,
-    fontWeight: "500",
-    lineHeight: 18,
-  },
-  upNextMeta: {
-    color: "#aaa",
+  commentMeta: {
+    color: "#a1a1aa",
     fontSize: 12,
     marginTop: 4,
   },
+  emptyText: {
+    color: "#a1a1aa",
+    fontSize: 13,
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
 });
-
-export default memo(VideoDetail);

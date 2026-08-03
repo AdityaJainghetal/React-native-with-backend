@@ -38,6 +38,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="AdminPanel" component={AdminTabNavigator} />
        <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
+       {/* <Stack.Screen name="SubscribedChannels" component={SubscribedChannels} /> */}
 
       </Stack.Navigator>
     </NavigationContainer>

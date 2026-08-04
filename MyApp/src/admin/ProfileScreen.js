@@ -49,8 +49,8 @@ const API_BASE = "https://bharat-pay-3.onrender.com/api";
 const BACKEND_URL = "https://bharat-pay-3.onrender.com";
 
 // Local testing:
-// const API_BASE = "http://localhost:8000/api";
-// const BACKEND_URL = "http://localhost:8000";
+// const API_BASE = "https://bharat-pay-3.onrender.com/api";
+// const BACKEND_URL = "https://bharat-pay-3.onrender.com";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -243,7 +243,7 @@ export default function ProfileScreen() {
       const mapped = (data.videos || []).map(mapVideo);
       setWatchLaterVideos(mapped);
       setUser((prev) =>
-        prev ? { ...prev, watchLaterCount: mapped.length } : prev
+        prev ? { ...prev, watchLaterCount: mapped.length } : prev,
       );
     } catch (e) {
       console.warn("Watch Later fetch error:", e);
@@ -271,9 +271,7 @@ export default function ProfileScreen() {
       const data = await res.json();
       const mapped = (data.videos || []).map(mapVideo);
       setLikedVideos(mapped);
-      setUser((prev) =>
-        prev ? { ...prev, likedCount: mapped.length } : prev
-      );
+      setUser((prev) => (prev ? { ...prev, likedCount: mapped.length } : prev));
     } catch (e) {
       console.warn("Liked fetch error:", e);
       setLikedVideos([]);
@@ -314,7 +312,7 @@ export default function ProfileScreen() {
           try {
             const vRes = await fetch(
               `${API_BASE}/uservideo/channel/${ch._id}/videos`,
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: { Authorization: `Bearer ${token}` } },
             );
             if (!vRes.ok) continue;
 
@@ -336,7 +334,7 @@ export default function ProfileScreen() {
         }
 
         allVideos.sort(
-          (a, b) => new Date(b.uploadDate || 0) - new Date(a.uploadDate || 0)
+          (a, b) => new Date(b.uploadDate || 0) - new Date(a.uploadDate || 0),
         );
 
         setMyVideos(allVideos);
@@ -349,7 +347,7 @@ export default function ProfileScreen() {
                 totalVideos: allVideos.length,
                 totalViews: prev.totalViews || totalViews,
               }
-            : prev
+            : prev,
         );
       } catch (e) {
         console.warn("My videos fetch error:", e);
@@ -854,7 +852,7 @@ export default function ProfileScreen() {
             {renderVideoList(
               watchLaterVideos,
               watchLaterLoading,
-              "No videos in Watch Later"
+              "No videos in Watch Later",
             )}
           </View>
         )}
@@ -875,7 +873,7 @@ export default function ProfileScreen() {
             {renderVideoList(
               historyVideos,
               historyLoading,
-              "No watch history yet"
+              "No watch history yet",
             )}
           </View>
         )}
@@ -892,8 +890,8 @@ export default function ProfileScreen() {
                     s === "latest"
                       ? "views"
                       : s === "views"
-                      ? "earnings"
-                      : "latest"
+                        ? "earnings"
+                        : "latest",
                   )
                 }
               >
@@ -901,8 +899,8 @@ export default function ProfileScreen() {
                   {sortBy === "latest"
                     ? "Latest"
                     : sortBy === "views"
-                    ? "Most viewed"
-                    : "Highest earnings"}
+                      ? "Most viewed"
+                      : "Highest earnings"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -910,7 +908,7 @@ export default function ProfileScreen() {
             {renderVideoList(
               sortedMyVideos,
               videosLoading,
-              "No videos yet. Upload your first video!"
+              "No videos yet. Upload your first video!",
             )}
           </View>
         )}
@@ -993,6 +991,17 @@ export default function ProfileScreen() {
               style={styles.menuItem}
               onPress={() => {
                 setShowMenu(false);
+                navigation.navigate("Leaderboard");
+              }}
+            >
+              <Lock size={22} color="#fff" />
+              <Text style={styles.menuText}>Leaderboard</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMenu(false);
                 navigation.navigate("Withdraw");
               }}
             >
@@ -1012,11 +1021,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <Settings size={22} color="#fff" />
-              <Text style={styles.menuText}>Settings</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem}>
               <HelpCircle size={22} color="#fff" />

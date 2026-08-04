@@ -24,7 +24,7 @@ import * as Clipboard from "expo-clipboard";
 
 const API_BASE = "https://bharat-pay-3.onrender.com/api";
 // Local:
-// const API_BASE = "http://localhost:8000/api";
+// const API_BASE = "https://bharat-pay-3.onrender.com/api";
 
 export default function WithdrawScreen() {
   const navigation = useNavigation();
@@ -42,7 +42,13 @@ export default function WithdrawScreen() {
   const usdBalance = (points * 0.01).toFixed(2);
 
   const methods = [
-    { id: "upi", name: "UPI (Google Pay / PhonePe)", min: 5, fee: 0, icon: "₹" },
+    {
+      id: "upi",
+      name: "UPI (Google Pay / PhonePe)",
+      min: 5,
+      fee: 0,
+      icon: "₹",
+    },
     { id: "paypal", name: "Cash", min: 10, fee: 2.9, icon: "$" },
     { id: "bank", name: "Bank Transfer", min: 20, fee: 1.5, icon: "🏦" },
   ];
@@ -131,7 +137,7 @@ export default function WithdrawScreen() {
 
       Alert.alert(
         "Request Submitted",
-        `$${withdrawAmount.toFixed(2)} via ${selectedMethod.name} request submitted!\nProcessing: 1-3 business days.`
+        `$${withdrawAmount.toFixed(2)} via ${selectedMethod.name} request submitted!\nProcessing: 1-3 business days.`,
       );
 
       setAmount("");

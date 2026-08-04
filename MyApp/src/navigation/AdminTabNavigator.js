@@ -10,7 +10,6 @@ import ShortsScreen from "../admin/ShortsScreen";
 import ProfileScreen from "../admin/ProfileScreen";
 import VideoDetailScreen from "../admin/VideoDetailScreen";
 import ChannelScreen from "../admin/ChannelScreen";
-import ChannelPage from "../admin/ChannelPage";
 import Leaderboard from "../admin/Leaderboard";
 import SubscribedChannels from "../admin/SubscribedChannels";
 import WithdrawScreen from "../admin/Withdraw";
@@ -159,7 +158,7 @@ export default function AdminTabNavigator() {
       <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
       <Stack.Screen name="SubscribedChannels" component={SubscribedChannels} />
       <Stack.Screen name="Withdraw" component={WithdrawScreen} />
-      <Stack.Screen name="ChannelPage" component={ChannelPage} />
+      <Stack.Screen name="ChannelScreen" component={ChannelScreen} />
       <Stack.Screen name="Leaderboard" component={Leaderboard} />
     </Stack.Navigator>
   );

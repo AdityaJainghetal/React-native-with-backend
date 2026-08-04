@@ -680,7 +680,7 @@ export default function ProfileScreen() {
               <View style={styles.pillsRow}>
                 <TouchableOpacity
                   style={styles.pillPrimary}
-                  onPress={() => navigation.navigate("ChannelPage")}
+                  onPress={() => navigation.navigate("ChannelScreen")}
                 >
                   <Text style={styles.pillPrimaryText}>View channel</Text>
                 </TouchableOpacity>

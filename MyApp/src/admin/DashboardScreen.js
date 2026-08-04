@@ -15,6 +15,8 @@ import { useNavigation } from "@react-navigation/native";
 import { ChevronRight, Play, Plus, Info } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Navbar from "./Navbar";
+import TopicChips from "./TopicChips";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.42;
@@ -196,6 +198,7 @@ export default function NetflixStylePage() {
   const [latest, setLatest] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [shorts, setShorts] = useState([]);
+  const [selectedTopic, setSelectedTopic] = useState("For you");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -409,6 +412,8 @@ export default function NetflixStylePage() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <Navbar onMenuPress={() => {}} points={0} />
+      <TopicChips onTopicChange={(topic) => setSelectedTopic(topic)} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -463,7 +468,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   scrollContent: {
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
+    paddingTop: 12,
     paddingBottom: 50,
     paddingHorizontal: 16,
   },

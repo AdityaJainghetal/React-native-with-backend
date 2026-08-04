@@ -5,7 +5,7 @@ import dummyData from "../data/dummyData";
 import styles from "../styles/globalStyles";
 
 export default function DashboardScreen({ route, navigation }) {
-  const { userEmail } = route.params;
+  const userEmail = route?.params?.userEmail || "Guest";
 
   return (
     <View style={styles.container}>

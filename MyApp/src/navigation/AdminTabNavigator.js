@@ -14,6 +14,7 @@ import Leaderboard from "../admin/Leaderboard";
 import SubscribedChannels from "../admin/SubscribedChannels";
 import WithdrawScreen from "../admin/Withdraw";
 import ViewAll from "../admin/ViewAll";
+import SearchPage from "../admin/SearchPage";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -164,6 +165,7 @@ export default function AdminTabNavigator() {
       <Stack.Screen name="Studio" component={ChannelScreen} />
       <Stack.Screen name="Leaderboard" component={Leaderboard} />
       <Stack.Screen name="ViewAll" component={ViewAll} />
+      <Stack.Screen name="Search" component={SearchPage} />
     </Stack.Navigator>
   );
 }

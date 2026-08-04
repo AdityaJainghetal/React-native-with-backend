@@ -159,6 +159,8 @@ export default function AdminTabNavigator() {
       <Stack.Screen name="SubscribedChannels" component={SubscribedChannels} />
       <Stack.Screen name="Withdraw" component={WithdrawScreen} />
       <Stack.Screen name="ChannelScreen" component={ChannelScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Studio" component={ChannelScreen} />
       <Stack.Screen name="Leaderboard" component={Leaderboard} />
     </Stack.Navigator>
   );

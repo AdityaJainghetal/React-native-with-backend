@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect } from "react";
 // import {
 //   View,
@@ -18,8 +19,8 @@
 //   Search,
 //   MoreVertical,
 //   Play,
-//   Link as LinkIcon,
 //   ChevronDown,
+//   ChevronRight,
 // } from "lucide-react-native";
 
 // const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -32,13 +33,18 @@
 //   const navigation = useNavigation();
 //   const { id } = route.params || {};
 
+//   // List mode (no id)
+//   const [subscribedList, setSubscribedList] = useState([]);
+//   const [listLoading, setListLoading] = useState(!id);
+
+//   // Detail mode (with id)
 //   const [channel, setChannel] = useState(null);
 //   const [videos, setVideos] = useState([]);
-//   const [isSubscribed, setIsSubscribed] = useState(false);
+//   const [isSubscribed, setIsSubscribed] = useState(true);
 //   const [subscribersCount, setSubscribersCount] = useState(0);
 //   const [subscribeLoading, setSubscribeLoading] = useState(false);
 //   const [activeTab, setActiveTab] = useState("Home");
-//   const [loading, setLoading] = useState(true);
+//   const [loading, setLoading] = useState(!!id);
 
 //   const tabs = ["Home", "Videos", "Playlists"];
 
@@ -56,17 +62,52 @@
 //     if (num >= 1_000_000)
 //       return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
 //     if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-//     return num.toString();
+//     return String(num);
 //   };
 
-//   // ─── Fetch channel ───
+//   // ─── LIST: subscribed channels ───
 //   useEffect(() => {
-//     const fetchChannel = async () => {
-//       if (!id) {
-//         setLoading(false);
-//         return;
-//       }
+//     if (id) return;
 
+//     const fetchSubscribed = async () => {
+//       try {
+//         setListLoading(true);
+//         const token = await AsyncStorage.getItem("token");
+//         if (!token) {
+//           setSubscribedList([]);
+//           return;
+//         }
+
+//         const res = await fetch(`${API_BASE}/subscribed-channels`, {
+//           headers: { Authorization: `Bearer ${token}` },
+//         });
+
+//         const data = await res.json();
+
+//         // flexible response shapes
+//         const list =
+//           data.channels ||
+//           data.subscribedChannels ||
+//           data.data ||
+//           (Array.isArray(data) ? data : []);
+
+//         setSubscribedList(Array.isArray(list) ? list : []);
+//       } catch (err) {
+//         console.error("Subscribed list error:", err);
+//         setSubscribedList([]);
+//       } finally {
+//         setListLoading(false);
+//       }
+//     };
+
+//     fetchSubscribed();
+//   }, [id]);
+
+//   // ─── DETAIL: single channel ───
+//   useEffect(() => {
+//     if (!id) return;
+
+//     const fetchChannel = async () => {
 //       try {
 //         setLoading(true);
 //         const token = await AsyncStorage.getItem("token");
@@ -79,15 +120,31 @@
 
 //         if (data.success && data.channel) {
 //           setChannel(data.channel);
-//           setSubscribersCount(data.channel.subscribersCount || 0);
-//           setIsSubscribed(Boolean(data.channel.isSubscribed));
+//           setSubscribersCount(
+//             data.channel.subscribersCount ?? data.channel.subscribers ?? 0
+//           );
+//           setIsSubscribed(Boolean(data.channel.isSubscribed ?? true));
 //           setVideos(data.videos || []);
 //         } else {
-//           setChannel(null);
-//           setVideos([]);
+//           // fallback: try videos endpoint
+//           setChannel(data.channel || { _id: id, name: "Channel" });
+//           setVideos(data.videos || []);
+//         }
+
+//         // also try channel videos if empty
+//         if ((!data.videos || data.videos.length === 0) && token) {
+//           try {
+//             const vRes = await fetch(`${API_BASE}/channel/${id}/videos`, {
+//               headers: { Authorization: `Bearer ${token}` },
+//             });
+//             if (vRes.ok) {
+//               const vData = await vRes.json();
+//               setVideos(vData.videos || []);
+//             }
+//           } catch (_) {}
 //         }
 //       } catch (err) {
-//         console.error("Fetch error:", err);
+//         console.error("Fetch channel error:", err);
 //         setChannel(null);
 //         setVideos([]);
 //       } finally {
@@ -98,7 +155,7 @@
 //     fetchChannel();
 //   }, [id]);
 
-//   // ─── Subscribe / Unsubscribe ───
+//   // ─── Subscribe toggle ───
 //   const handleSubscribe = async () => {
 //     if (!id) return;
 //     setSubscribeLoading(true);
@@ -134,7 +191,12 @@
 //     }
 //   };
 
-//   // ─── Open video ───
+//   const openChannel = (ch) => {
+//     const channelId = ch._id || ch.id || ch.channelId;
+//     if (!channelId) return;
+//     navigation.push("SubscribedChannels", { id: channelId });
+//   };
+
 //   const openVideo = (video) => {
 //     navigation.navigate("VideoDetail", {
 //       id: video._id,
@@ -142,28 +204,98 @@
 //         id: video._id,
 //         title: video.title || video.name,
 //         thumb: getMediaUrl(video.thumbnail),
-//         videofile: getMediaUrl(video.videofile || video.videoUrl || video.video),
+//         videofile: getMediaUrl(
+//           video.videofile || video.videoUrl || video.video
+//         ),
 //         description: video.description || "",
 //         views: video.views || 0,
+//         likes: video.likesCount ?? video.likes ?? 0,
+//         dislikes: video.dislikesCount ?? video.dislikes ?? 0,
 //       },
 //     });
 //   };
 
-//   // ─── Loading ───
+//   // ═══════════════ LIST MODE (no id) ═══════════════
+//   if (!id) {
+//     if (listLoading) {
+//       return (
+//         <View style={styles.loadingContainer}>
+//           <ActivityIndicator size="large" color="#ef4444" />
+//           <Text style={styles.loadingText}>Loading subscriptions...</Text>
+//         </View>
+//       );
+//     }
+
+//     return (
+//       <View style={styles.container}>
+//         <View style={styles.listHeader}>
+//           <Text style={styles.listTitle}>Subscriptions</Text>
+//           <Text style={styles.listSubtitle}>
+//             {subscribedList.length} channel
+//             {subscribedList.length !== 1 ? "s" : ""}
+//           </Text>
+//         </View>
+
+//         {subscribedList.length === 0 ? (
+//           <View style={styles.emptyBox}>
+//             <Text style={styles.emptyText}>No subscribed channels yet</Text>
+//             <Text style={styles.emptyHint}>
+//               Subscribe to channels to see them here
+//             </Text>
+//           </View>
+//         ) : (
+//           <FlatList
+//             data={subscribedList}
+//             keyExtractor={(item) =>
+//               String(item._id || item.id || item.channelId)
+//             }
+//             contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+//             renderItem={({ item: ch }) => {
+//               const avatar =
+//                 getMediaUrl(ch.channelImage || ch.avatar || ch.image) ||
+//                 "https://via.placeholder.com/80";
+//               const name = ch.name || ch.channelName || "Channel";
+//               const subs =
+//                 ch.subscribersCount ?? ch.subscribers ?? ch.subscriberCount ?? 0;
+
+//               return (
+//                 <TouchableOpacity
+//                   style={styles.channelRow}
+//                   activeOpacity={0.8}
+//                   onPress={() => openChannel(ch)}
+//                 >
+//                   <Image source={{ uri: avatar }} style={styles.listAvatar} />
+//                   <View style={styles.channelRowInfo}>
+//                     <Text style={styles.channelRowName} numberOfLines={1}>
+//                       {name}
+//                     </Text>
+//                     <Text style={styles.channelRowMeta}>
+//                       {formatCount(subs)} subscribers
+//                     </Text>
+//                   </View>
+//                   <ChevronRight size={20} color="#71717a" />
+//                 </TouchableOpacity>
+//               );
+//             }}
+//           />
+//         )}
+//       </View>
+//     );
+//   }
+
+//   // ═══════════════ DETAIL MODE (with id) ═══════════════
 //   if (loading) {
 //     return (
 //       <View style={styles.loadingContainer}>
 //         <ActivityIndicator size="large" color="#ef4444" />
-//         <Text style={styles.loadingText}>Loading...</Text>
+//         <Text style={styles.loadingText}>Loading channel...</Text>
 //       </View>
 //     );
 //   }
 
 //   const avatarUrl =
-//     getMediaUrl(channel?.channelImage) ||
-//     "https://via.placeholder.com/150";
+//     getMediaUrl(channel?.channelImage) || "https://via.placeholder.com/150";
 
-//   // ─── Video row ───
 //   const renderVideo = ({ item: video }) => (
 //     <TouchableOpacity
 //       style={styles.videoRow}
@@ -180,9 +312,7 @@
 //           style={styles.thumb}
 //         />
 //         <View style={styles.durationBadge}>
-//           <Text style={styles.durationText}>
-//             {video.duration || "0:00"}
-//           </Text>
+//           <Text style={styles.durationText}>{video.duration || "0:00"}</Text>
 //         </View>
 //       </View>
 
@@ -203,11 +333,7 @@
 //         ) : null}
 //       </View>
 
-//       <TouchableOpacity
-//         style={styles.moreBtn}
-//         onPress={() => {}}
-//         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-//       >
+//       <TouchableOpacity style={styles.moreBtn} hitSlop={10}>
 //         <MoreVertical size={18} color="#a1a1aa" />
 //       </TouchableOpacity>
 //     </TouchableOpacity>
@@ -216,19 +342,20 @@
 //   return (
 //     <View style={styles.container}>
 //       <ScrollView showsVerticalScrollIndicator={false}>
-//         {/* ========== CHANNEL HEADER ========== */}
+//         {/* Header */}
 //         <View style={styles.header}>
 //           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
 
 //           <View style={styles.headerInfo}>
-//             <View style={styles.nameRow}>
-//               <Text style={styles.channelName} numberOfLines={1}>
-//                 {channel?.name || "Channel Name"}
-//               </Text>
-//             </View>
+//             <Text style={styles.channelName} numberOfLines={1}>
+//               {channel?.name || "Channel Name"}
+//             </Text>
 
 //             <Text style={styles.handleRow}>
-//               @{channel?.handle || channel?.name?.replace(/\s+/g, "") || "channel"}
+//               @
+//               {channel?.handle ||
+//                 channel?.name?.replace(/\s+/g, "") ||
+//                 "channel"}
 //               {"  •  "}
 //               {formatCount(subscribersCount)} subscribers
 //               {"  •  "}
@@ -241,7 +368,6 @@
 //                 "No description available"}
 //             </Text>
 
-//             {/* Subscribe button */}
 //             <TouchableOpacity
 //               style={[
 //                 styles.subscribeBtn,
@@ -269,7 +395,7 @@
 //           </View>
 //         </View>
 
-//         {/* ========== TABS ========== */}
+//         {/* Tabs */}
 //         <View style={styles.tabsContainer}>
 //           <ScrollView
 //             horizontal
@@ -293,13 +419,12 @@
 //               </TouchableOpacity>
 //             ))}
 //           </ScrollView>
-
 //           <TouchableOpacity style={styles.searchBtn}>
 //             <Search size={20} color="#a1a1aa" />
 //           </TouchableOpacity>
 //         </View>
 
-//         {/* ========== VIDEOS ========== */}
+//         {/* Videos */}
 //         <View style={styles.videosSection}>
 //           {videos.length === 0 ? (
 //             <Text style={styles.emptyText}>
@@ -315,7 +440,7 @@
 //           )}
 //         </View>
 
-//         {/* ========== PLAYLIST PREVIEW ========== */}
+//         {/* Playlist preview */}
 //         {videos.length > 0 && (
 //           <View style={styles.playlistSection}>
 //             <View style={styles.playlistHeader}>
@@ -367,9 +492,6 @@
 //   );
 // }
 
-// // ────────────────────────────────────────────────
-// // Styles
-// // ────────────────────────────────────────────────
 // const styles = StyleSheet.create({
 //   container: {
 //     flex: 1,
@@ -386,7 +508,70 @@
 //     marginTop: 12,
 //   },
 
-//   // Header
+//   // List mode
+//   listHeader: {
+//     paddingHorizontal: 16,
+//     paddingTop: 16,
+//     paddingBottom: 8,
+//   },
+//   listTitle: {
+//     color: "#fff",
+//     fontSize: 22,
+//     fontWeight: "700",
+//   },
+//   listSubtitle: {
+//     color: "#a1a1aa",
+//     fontSize: 13,
+//     marginTop: 4,
+//   },
+//   emptyBox: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     paddingTop: 80,
+//   },
+//   emptyText: {
+//     color: "#fff",
+//     fontSize: 16,
+//     fontWeight: "600",
+//   },
+//   emptyHint: {
+//     color: "#71717a",
+//     fontSize: 13,
+//     marginTop: 6,
+//   },
+//   channelRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#1a1a1a",
+//     borderRadius: 12,
+//     padding: 12,
+//     marginBottom: 10,
+//     borderWidth: 1,
+//     borderColor: "#272727",
+//   },
+//   listAvatar: {
+//     width: 52,
+//     height: 52,
+//     borderRadius: 26,
+//     backgroundColor: "#272727",
+//   },
+//   channelRowInfo: {
+//     flex: 1,
+//     marginLeft: 12,
+//   },
+//   channelRowName: {
+//     color: "#fff",
+//     fontSize: 15,
+//     fontWeight: "600",
+//   },
+//   channelRowMeta: {
+//     color: "#a1a1aa",
+//     fontSize: 12,
+//     marginTop: 2,
+//   },
+
+//   // Detail header
 //   header: {
 //     flexDirection: "row",
 //     padding: 16,
@@ -404,16 +589,10 @@
 //   headerInfo: {
 //     flex: 1,
 //   },
-//   nameRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//   },
 //   channelName: {
 //     color: "#fff",
 //     fontSize: 20,
 //     fontWeight: "700",
-//     flexShrink: 1,
 //   },
 //   handleRow: {
 //     color: "#a1a1aa",
@@ -426,8 +605,6 @@
 //     marginTop: 8,
 //     lineHeight: 18,
 //   },
-
-//   // Subscribe
 //   subscribeBtn: {
 //     flexDirection: "row",
 //     alignItems: "center",
@@ -490,12 +667,6 @@
 //   videosSection: {
 //     paddingHorizontal: 12,
 //     paddingTop: 12,
-//   },
-//   emptyText: {
-//     color: "#71717a",
-//     textAlign: "center",
-//     paddingVertical: 40,
-//     fontSize: 14,
 //   },
 //   videoRow: {
 //     flexDirection: "row",
@@ -603,6 +774,7 @@
 //   },
 // });
 
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -615,6 +787,7 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  StatusBar,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -625,6 +798,7 @@ import {
   Play,
   ChevronDown,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -647,10 +821,11 @@ export default function SubscribedChannels() {
   const [isSubscribed, setIsSubscribed] = useState(true);
   const [subscribersCount, setSubscribersCount] = useState(0);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("Home");
+  const [activeTab, setActiveTab] = useState("All");
   const [loading, setLoading] = useState(!!id);
 
-  const tabs = ["Home", "Videos", "Playlists"];
+  // Matches the screenshot tabs style
+  const tabs = ["All", "Today", "Videos", "Shorts", "Live", "Posts"];
 
   const getMediaUrl = (path) => {
     if (!path) return null;
@@ -660,7 +835,7 @@ export default function SubscribedChannels() {
   };
 
   const formatCount = (num) => {
-    if (!num) return "0";
+    if (!num && num !== 0) return "0";
     if (num >= 1_000_000_000)
       return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
     if (num >= 1_000_000)
@@ -688,7 +863,6 @@ export default function SubscribedChannels() {
 
         const data = await res.json();
 
-        // flexible response shapes
         const list =
           data.channels ||
           data.subscribedChannels ||
@@ -730,12 +904,10 @@ export default function SubscribedChannels() {
           setIsSubscribed(Boolean(data.channel.isSubscribed ?? true));
           setVideos(data.videos || []);
         } else {
-          // fallback: try videos endpoint
           setChannel(data.channel || { _id: id, name: "Channel" });
           setVideos(data.videos || []);
         }
 
-        // also try channel videos if empty
         if ((!data.videos || data.videos.length === 0) && token) {
           try {
             const vRes = await fetch(`${API_BASE}/channel/${id}/videos`, {
@@ -824,7 +996,7 @@ export default function SubscribedChannels() {
     if (listLoading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ef4444" />
+          <ActivityIndicator size="large" color="#FF0000" />
           <Text style={styles.loadingText}>Loading subscriptions...</Text>
         </View>
       );
@@ -832,6 +1004,7 @@ export default function SubscribedChannels() {
 
     return (
       <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#0f0f0f" />
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>Subscriptions</Text>
           <Text style={styles.listSubtitle}>
@@ -877,7 +1050,7 @@ export default function SubscribedChannels() {
                       {formatCount(subs)} subscribers
                     </Text>
                   </View>
-                  <ChevronRight size={20} color="#71717a" />
+                  <ChevronRight size={20} color="#aaaaaa" />
                 </TouchableOpacity>
               );
             }}
@@ -891,7 +1064,7 @@ export default function SubscribedChannels() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#ef4444" />
+        <ActivityIndicator size="large" color="#FF0000" />
         <Text style={styles.loadingText}>Loading channel...</Text>
       </View>
     );
@@ -900,6 +1073,33 @@ export default function SubscribedChannels() {
   const avatarUrl =
     getMediaUrl(channel?.channelImage) || "https://via.placeholder.com/150";
 
+  // Shorts-style card (matches screenshot)
+  const renderShortCard = ({ item: video }) => (
+    <TouchableOpacity
+      style={styles.shortCard}
+      activeOpacity={0.9}
+      onPress={() => openVideo(video)}
+    >
+      <Image
+        source={{
+          uri:
+            getMediaUrl(video.thumbnail) ||
+            "https://via.placeholder.com/180x320",
+        }}
+        style={styles.shortThumb}
+      />
+      <View style={styles.shortOverlay}>
+        <Text style={styles.shortTitle} numberOfLines={2}>
+          {video.title || video.name}
+        </Text>
+        <Text style={styles.shortViews}>
+          {formatCount(video.views)} views
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Normal video row
   const renderVideo = ({ item: video }) => (
     <TouchableOpacity
       style={styles.videoRow}
@@ -925,81 +1125,88 @@ export default function SubscribedChannels() {
           {video.title || video.name}
         </Text>
         <Text style={styles.videoMeta} numberOfLines={1}>
-          {channel?.name} • {formatCount(video.views)} views
+          {formatCount(video.views)} views
           {video.createdAt
             ? ` • ${new Date(video.createdAt).toLocaleDateString()}`
             : ""}
         </Text>
-        {video.description ? (
-          <Text style={styles.videoDesc} numberOfLines={2}>
-            {video.description}
-          </Text>
-        ) : null}
       </View>
 
       <TouchableOpacity style={styles.moreBtn} hitSlop={10}>
-        <MoreVertical size={18} color="#a1a1aa" />
+        <MoreVertical size={18} color="#aaaaaa" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0f0f0f" />
+
+      {/* Top bar matching YouTube */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={12}
+        >
+          <ArrowLeft size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.topBarRight}>
+          <TouchableOpacity style={styles.iconBtn}>
+            <Bell size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn}>
+            <Search size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Channel Header - Avatar + Name (YouTube style) */}
+        <View style={styles.channelHeader}>
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          <Text style={styles.channelName} numberOfLines={1}>
+            {channel?.name || "Channel Name"}
+          </Text>
+          <Text style={styles.handleText}>
+            @
+            {channel?.handle ||
+              channel?.name?.replace(/\s+/g, "")?.toLowerCase() ||
+              "channel"}
+            {"  •  "}
+            {formatCount(subscribersCount)} subscribers
+            {"  •  "}
+            {formatCount(channel?.videoCount || videos.length)} videos
+          </Text>
 
-          <View style={styles.headerInfo}>
-            <Text style={styles.channelName} numberOfLines={1}>
-              {channel?.name || "Channel Name"}
-            </Text>
-
-            <Text style={styles.handleRow}>
-              @
-              {channel?.handle ||
-                channel?.name?.replace(/\s+/g, "") ||
-                "channel"}
-              {"  •  "}
-              {formatCount(subscribersCount)} subscribers
-              {"  •  "}
-              {formatCount(channel?.videoCount || videos.length)} videos
-            </Text>
-
-            <Text style={styles.description} numberOfLines={3}>
-              {channel?.description ||
-                channel?.channeldescription ||
-                "No description available"}
-            </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.subscribeBtn,
-                isSubscribed && styles.subscribedBtn,
-              ]}
-              onPress={handleSubscribe}
-              disabled={subscribeLoading}
-              activeOpacity={0.8}
-            >
-              {subscribeLoading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={isSubscribed ? "#fff" : "#000"}
-                />
-              ) : isSubscribed ? (
-                <>
-                  <Bell size={16} color="#fff" />
-                  <Text style={styles.subscribedText}>Subscribed</Text>
-                  <ChevronDown size={16} color="#fff" />
-                </>
-              ) : (
-                <Text style={styles.subscribeText}>Subscribe</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          {/* Subscribe button */}
+          <TouchableOpacity
+            style={[
+              styles.subscribeBtn,
+              isSubscribed && styles.subscribedBtn,
+            ]}
+            onPress={handleSubscribe}
+            disabled={subscribeLoading}
+            activeOpacity={0.85}
+          >
+            {subscribeLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={isSubscribed ? "#fff" : "#0f0f0f"}
+              />
+            ) : isSubscribed ? (
+              <>
+                <Bell size={16} color="#fff" />
+                <Text style={styles.subscribedText}>Subscribed</Text>
+                <ChevronDown size={16} color="#fff" />
+              </>
+            ) : (
+              <Text style={styles.subscribeText}>Subscribe</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Tabs */}
+        {/* Tabs - exact style from screenshot */}
         <View style={styles.tabsContainer}>
           <ScrollView
             horizontal
@@ -1023,74 +1230,51 @@ export default function SubscribedChannels() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          <TouchableOpacity style={styles.searchBtn}>
-            <Search size={20} color="#a1a1aa" />
-          </TouchableOpacity>
         </View>
 
-        {/* Videos */}
-        <View style={styles.videosSection}>
-          {videos.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No videos found for this channel.
-            </Text>
-          ) : (
-            <FlatList
-              data={videos}
-              keyExtractor={(item) => item._id}
-              renderItem={renderVideo}
-              scrollEnabled={false}
-            />
-          )}
-        </View>
-
-        {/* Playlist preview */}
-        {videos.length > 0 && (
-          <View style={styles.playlistSection}>
-            <View style={styles.playlistHeader}>
-              <Text style={styles.playlistTitle}>
-                {channel?.name} - Playlist
-              </Text>
-              <TouchableOpacity style={styles.playAllBtn}>
-                <Play size={14} color="#fff" fill="#fff" />
-                <Text style={styles.playAllText}>Play all</Text>
-              </TouchableOpacity>
+        {/* Shorts Section (matches the screenshot card) */}
+        {(activeTab === "All" || activeTab === "Shorts") && videos.length > 0 && (
+          <View style={styles.shortsSection}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.shortsTitleRow}>
+                <View style={styles.shortsIcon}>
+                  <Play size={14} color="#fff" fill="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Shorts</Text>
+                <ChevronRight size={18} color="#fff" />
+              </View>
             </View>
 
-            <ScrollView
+            <FlatList
+              data={videos.slice(0, 8)}
+              keyExtractor={(item) => item._id + "-short"}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingRight: 16 }}
-            >
-              {videos.slice(0, 6).map((video) => (
-                <TouchableOpacity
-                  key={video._id + "-pl"}
-                  style={styles.playlistCard}
-                  onPress={() => openVideo(video)}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.playlistThumbWrapper}>
-                    <Image
-                      source={{
-                        uri:
-                          getMediaUrl(video.thumbnail) ||
-                          "https://via.placeholder.com/210x118",
-                      }}
-                      style={styles.playlistThumb}
-                    />
-                    <View style={styles.durationBadge}>
-                      <Text style={styles.durationText}>
-                        {video.duration || "0:00"}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+              contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
+              renderItem={renderShortCard}
+            />
           </View>
         )}
 
-        <View style={{ height: 40 }} />
+        {/* Videos list */}
+        {(activeTab === "All" || activeTab === "Videos" || activeTab === "Today") && (
+          <View style={styles.videosSection}>
+            {videos.length === 0 ? (
+              <Text style={styles.emptyText}>
+                No videos found for this channel.
+              </Text>
+            ) : (
+              <FlatList
+                data={videos}
+                keyExtractor={(item) => item._id}
+                renderItem={renderVideo}
+                scrollEnabled={false}
+              />
+            )}
+          </View>
+        )}
+
+        <View style={{ height: 50 }} />
       </ScrollView>
     </View>
   );
@@ -1098,7 +1282,7 @@ export default function SubscribedChannels() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 5,
     backgroundColor: "#0f0f0f",
   },
   loadingContainer: {
@@ -1108,14 +1292,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    color: "#a1a1aa",
-    marginTop: 12,
+    color: "#aaaaaa",
+    marginTop: 25,
+    fontSize: 14,
+  },
+
+  // Top bar
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#0f0f0f",
+  },
+  backBtn: {
+    padding: 4,
+  },
+  topBarRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  iconBtn: {
+    padding: 8,
   },
 
   // List mode
   listHeader: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 50,
     paddingBottom: 8,
   },
   listTitle: {
@@ -1124,7 +1330,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   listSubtitle: {
-    color: "#a1a1aa",
+    color: "#aaaaaa",
     fontSize: 13,
     marginTop: 4,
   },
@@ -1140,7 +1346,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   emptyHint: {
-    color: "#71717a",
+    color: "#717171",
     fontSize: 13,
     marginTop: 6,
   },
@@ -1151,8 +1357,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#272727",
   },
   listAvatar: {
     width: 52,
@@ -1170,101 +1374,144 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   channelRowMeta: {
-    color: "#a1a1aa",
+    color: "#aaaaaa",
     fontSize: 12,
     marginTop: 2,
   },
 
-  // Detail header
-  header: {
-    flexDirection: "row",
-    padding: 16,
-    gap: 14,
-    alignItems: "flex-start",
+  // Channel header (YouTube style)
+  channelHeader: {
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: "#272727",
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  headerInfo: {
-    flex: 1,
+    marginBottom: 12,
   },
   channelName: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
+    textAlign: "center",
   },
-  handleRow: {
-    color: "#a1a1aa",
+  handleText: {
+    color: "#aaaaaa",
     fontSize: 13,
-    marginTop: 4,
-  },
-  description: {
-    color: "#d4d4d8",
-    fontSize: 13,
-    marginTop: 8,
-    lineHeight: 18,
+    marginTop: 6,
+    textAlign: "center",
   },
   subscribeBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    alignSelf: "flex-start",
-    marginTop: 12,
+    marginTop: 14,
     backgroundColor: "#fff",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
     borderRadius: 20,
   },
   subscribedBtn: {
     backgroundColor: "#272727",
-    borderWidth: 1,
-    borderColor: "#333",
   },
   subscribeText: {
-    color: "#000",
+    color: "#0f0f0f",
     fontWeight: "600",
-    fontSize: 13,
+    fontSize: 14,
   },
   subscribedText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 13,
+    fontSize: 14,
   },
 
-  // Tabs
+  // Tabs (exact match to screenshot)
   tabsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#272727",
-    paddingLeft: 8,
   },
   tabsScroll: {
-    flexGrow: 1,
+    paddingHorizontal: 8,
   },
   tab: {
     paddingVertical: 12,
     paddingHorizontal: 14,
+    marginHorizontal: 2,
   },
   tabActive: {
-    borderBottomWidth: 2,
+    borderBottomWidth: 2.5,
     borderBottomColor: "#fff",
   },
   tabText: {
-    color: "#a1a1aa",
+    color: "#aaaaaa",
     fontSize: 14,
     fontWeight: "500",
   },
   tabTextActive: {
     color: "#fff",
+    fontWeight: "600",
   },
-  searchBtn: {
-    padding: 12,
+
+  // Shorts section
+  shortsSection: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  shortsTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  shortsIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    backgroundColor: "#FF0000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  shortCard: {
+    width: 150,
+    height: 260,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#1a1a1a",
+  },
+  shortThumb: {
+    width: "100%",
+    height: "100%",
+  },
+  shortOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  shortTitle: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 17,
+  },
+  shortViews: {
+    color: "#cccccc",
+    fontSize: 11,
+    marginTop: 4,
   },
 
   // Videos
@@ -1313,67 +1560,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   videoMeta: {
-    color: "#a1a1aa",
+    color: "#aaaaaa",
     fontSize: 12,
     marginTop: 4,
-  },
-  videoDesc: {
-    color: "#71717a",
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 16,
   },
   moreBtn: {
-    paddingTop: 4,
+    paddingTop: 5,
     paddingLeft: 4,
-  },
-
-  // Playlist
-  playlistSection: {
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#272727",
-    paddingLeft: 12,
-  },
-  playlistHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingRight: 12,
-  },
-  playlistTitle: {
-    color: "#e4e4e7",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  playAllBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: "#272727",
-  },
-  playAllText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  playlistCard: {
-    width: 160,
-  },
-  playlistThumbWrapper: {
-    width: 160,
-    aspectRatio: 16 / 9,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#1a1a1a",
-  },
-  playlistThumb: {
-    width: "100%",
-    height: "100%",
   },
 });

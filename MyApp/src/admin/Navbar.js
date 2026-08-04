@@ -144,10 +144,6 @@ export default function Navbar({ onMenuPress, points = 0 }) {
       <View style={styles.navbar}>
         {/* Left */}
         <View style={styles.left}>
-          <TouchableOpacity onPress={onMenuPress} style={styles.iconBtn}>
-            <Text style={styles.icon}>☰</Text>
-          </TouchableOpacity>
-
           <Text style={styles.logo}>Vidoo</Text>
 
           <View style={styles.pointsBadge}>
@@ -183,17 +179,6 @@ export default function Navbar({ onMenuPress, points = 0 }) {
 
         {/* Right */}
         <View style={styles.right}>
-          <TouchableOpacity onPress={handleMicClick} style={styles.iconBtn}>
-            <Text style={styles.icon}>{isListening ? "🎤" : "🎙️"}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("UploadVideo")}
-            style={styles.iconBtn}
-          >
-            <Text style={styles.icon}>＋</Text>
-          </TouchableOpacity>
-
           {isLoggedIn ? (
             <TouchableOpacity
               onPress={() => setIsDropdownOpen(true)}
@@ -289,7 +274,7 @@ export default function Navbar({ onMenuPress, points = 0 }) {
                   style={styles.viewChannelBtn}
                   onPress={() => {
                     setIsDropdownOpen(false);
-                    navigation.navigate("Channel", {
+                    navigation.navigate("ChannelScreen", {
                       handle: user?._id || "me",
                     });
                   }}
@@ -319,14 +304,6 @@ export default function Navbar({ onMenuPress, points = 0 }) {
               />
 
               {/* Settings expandable */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => setIsSettingsOpen(!isSettingsOpen)}
-              >
-                <Text style={styles.menuIcon}>⚙️</Text>
-                <Text style={styles.menuLabel}>Settings</Text>
-                <Text style={styles.chevron}>{isSettingsOpen ? "▾" : "›"}</Text>
-              </TouchableOpacity>
 
               {isSettingsOpen && (
                 <View style={styles.subMenu}>
@@ -434,8 +411,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingTop: Platform.OS === "ios" ? 20 : 25,
-    paddingBottom: 8,
+    paddingTop: Platform.OS === "ios" ? 30 : 45,
+    paddingBottom: 20,
     zIndex: 100,
   },
   left: {

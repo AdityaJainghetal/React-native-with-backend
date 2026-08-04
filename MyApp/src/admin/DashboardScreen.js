@@ -174,7 +174,6 @@
 //             <Plus size={16} color="#fff" />
 //           </TouchableOpacity>
 
-         
 //         </View>
 
 //         <Text style={styles.cardTitle} numberOfLines={1}>
@@ -720,7 +719,8 @@ const getArrayFromPayload = (payload) => {
   if (Array.isArray(payload?.videos)) return payload.videos;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.channels)) return payload.channels;
-  if (Array.isArray(payload?.subscribedChannels)) return payload.subscribedChannels;
+  if (Array.isArray(payload?.subscribedChannels))
+    return payload.subscribedChannels;
   if (Array.isArray(payload?.subscribers)) return payload.subscribers;
   return [];
 };
@@ -738,12 +738,16 @@ const fetchWithAuth = async (endpoint) => {
 // ────────────────────────────────────────────────
 // Components
 // ────────────────────────────────────────────────
-function SectionHeader({ title }) {
+function SectionHeader({ title, onPress }) {
   return (
-    <View style={styles.sectionHeader}>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={styles.sectionHeader}
+    >
       <Text style={styles.sectionTitle}>{title}</Text>
       <ChevronRight size={20} color="#a1a1aa" />
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -831,11 +835,17 @@ export default function NetflixStylePage() {
           fetchWithAuth("trending-shorts"),
         ]);
 
-        setRecommended(getArrayFromPayload(recommendedData).map(normalizeVideoListItem));
-        setTrending(getArrayFromPayload(trendingData).map(normalizeVideoListItem));
+        setRecommended(
+          getArrayFromPayload(recommendedData).map(normalizeVideoListItem),
+        );
+        setTrending(
+          getArrayFromPayload(trendingData).map(normalizeVideoListItem),
+        );
         setLatest(getArrayFromPayload(latestData).map(normalizeVideoListItem));
         setSubscriptions(
-          getArrayFromPayload(subscriptionsData).map(normalizeSubscriptionChannel)
+          getArrayFromPayload(subscriptionsData).map(
+            normalizeSubscriptionChannel,
+          ),
         );
         setShorts(getArrayFromPayload(shortsData).map(normalizeShort));
       } catch (error) {
@@ -857,7 +867,8 @@ export default function NetflixStylePage() {
     return (
       Boolean(item?.isShort) ||
       normalizedTypes.some(
-        (type) => type === "short" || type === "shorts" || type.includes("short")
+        (type) =>
+          type === "short" || type === "shorts" || type.includes("short"),
       )
     );
   };
@@ -877,6 +888,10 @@ export default function NetflixStylePage() {
     }
 
     navigation.navigate("VideoDetail", { id: item.id, item });
+  };
+
+  const handleSectionPress = (type) => {
+    navigation.navigate("ViewAll", { type });
   };
 
   const handleAddToWatchLater = async (item) => {
@@ -915,9 +930,15 @@ export default function NetflixStylePage() {
   };
 
   // ──── Horizontal Videos Section ────
-  const renderHorizontalSection = (title, data, emptyMsg, showProgress = true) => (
+  const renderHorizontalSection = (
+    title,
+    data,
+    emptyMsg,
+    showProgress = true,
+    type = "recommended",
+  ) => (
     <View style={styles.section}>
-      <SectionHeader title={title} />
+      <SectionHeader title={title} onPress={() => handleSectionPress(type)} />
 
       {loading && data.length === 0 ? (
         <ActivityIndicator color="#fff" style={{ marginVertical: 24 }} />
@@ -1011,13 +1032,17 @@ export default function NetflixStylePage() {
         {renderHorizontalSection(
           "Recommended Videos",
           recommended,
-          "No recommended videos available right now."
+          "No recommended videos available right now.",
+          true,
+          "recommended",
         )}
 
         {renderHorizontalSection(
           "Trending Videos",
           trending,
-          "No trending videos available right now."
+          "No trending videos available right now.",
+          true,
+          "trending",
         )}
 
         {renderShortsGrid("Trending Shorts")}
@@ -1025,14 +1050,17 @@ export default function NetflixStylePage() {
         {renderHorizontalSection(
           "Latest Videos",
           latest,
-          "No latest videos available right now."
+          "No latest videos available right now.",
+          true,
+          "latest",
         )}
 
         {renderHorizontalSection(
           "Subscription Videos",
           subscriptions,
           "Subscribe to channels to see their videos here.",
-          false
+          false,
+          "subscriptions",
         )}
 
         {renderShortsGrid("Top Shorts")}

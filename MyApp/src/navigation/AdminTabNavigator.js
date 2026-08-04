@@ -13,6 +13,7 @@ import ChannelScreen from "../admin/ChannelScreen";
 import Leaderboard from "../admin/Leaderboard";
 import SubscribedChannels from "../admin/SubscribedChannels";
 import WithdrawScreen from "../admin/Withdraw";
+import ViewAll from "../admin/ViewAll";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -162,6 +163,7 @@ export default function AdminTabNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Studio" component={ChannelScreen} />
       <Stack.Screen name="Leaderboard" component={Leaderboard} />
+      <Stack.Screen name="ViewAll" component={ViewAll} />
     </Stack.Navigator>
   );
 }

@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  FlatList,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -41,27 +43,20 @@ const FALLBACK_VIDEO = {
 
 const formatTime = (seconds) => {
   if (!seconds || Number.isNaN(Number(seconds))) return "0:00";
-  const safeSeconds = Math.max(0, Math.floor(Number(seconds)));
-  const minutes = Math.floor(safeSeconds / 60);
-  const remainder = safeSeconds % 60;
-  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+  const safe = Math.max(0, Math.floor(Number(seconds)));
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 };
 
 const resolveMediaUrl = (value) => {
   if (!value) return "";
   if (/^https?:\/\//i.test(value)) return value;
-
   const normalized = String(value).replace(/\\/g, "/");
-  if (normalized.startsWith("uploads/")) {
-    return `${BACKEND_URL}/${normalized}`;
-  }
-  if (normalized.includes("uploads/")) {
+  if (normalized.startsWith("uploads/")) return `${BACKEND_URL}/${normalized}`;
+  if (normalized.includes("uploads/"))
     return `${BACKEND_URL}/${normalized.split("uploads/").pop()}`;
-  }
-  if (normalized.startsWith("/uploads/")) {
-    return `${BACKEND_URL}${normalized}`;
-  }
-
+  if (normalized.startsWith("/uploads/")) return `${BACKEND_URL}${normalized}`;
   return `${BACKEND_URL}/${normalized}`;
 };
 
@@ -72,19 +67,17 @@ export default function VideoDetailScreen() {
   const routeVideo = route?.params?.item ?? route?.params?.video ?? null;
 
   const [loading, setLoading] = useState(true);
-  const [videoDetails, setVideoDetails] = useState(
-    routeVideo || FALLBACK_VIDEO,
-  );
+  const [videoDetails, setVideoDetails] = useState(routeVideo || FALLBACK_VIDEO);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [likesCount, setLikesCount] = useState(
-    Number(routeVideo?.likesCount ?? routeVideo?.likes ?? 0),
+    Number(routeVideo?.likesCount ?? routeVideo?.likes ?? 0)
   );
   const [dislikesCount, setDislikesCount] = useState(
-    Number(routeVideo?.dislikesCount ?? routeVideo?.dislikes ?? 0),
+    Number(routeVideo?.dislikesCount ?? routeVideo?.dislikes ?? 0)
   );
   const [liked, setLiked] = useState(Boolean(routeVideo?.isLiked));
   const [disliked, setDisliked] = useState(Boolean(routeVideo?.isDisliked));
@@ -92,7 +85,12 @@ export default function VideoDetailScreen() {
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [suggestedVideos, setSuggestedVideos] = useState([]);
+  const [suggestedLoading, setSuggestedLoading] = useState(false);
+
   const controlsTimer = useRef(null);
+  const lastTap = useRef(0);
+  const lastTapSide = useRef(null); // "left" | "right"
 
   const resolvedVideoUrl = useMemo(() => {
     const candidate =
@@ -101,7 +99,6 @@ export default function VideoDetailScreen() {
       videoDetails?.videofile ||
       videoDetails?.uri ||
       FALLBACK_VIDEO.videoUrl;
-
     return resolveMediaUrl(candidate) || FALLBACK_VIDEO.videoUrl;
   }, [videoDetails]);
 
@@ -111,7 +108,6 @@ export default function VideoDetailScreen() {
       videoDetails?.thumb ||
       videoDetails?.poster ||
       FALLBACK_VIDEO.thumbnail;
-
     return resolveMediaUrl(candidate) || FALLBACK_VIDEO.thumbnail;
   }, [videoDetails]);
 
@@ -121,40 +117,39 @@ export default function VideoDetailScreen() {
     p.play();
   });
 
+  // Unlock orientation
   useEffect(() => {
     ScreenOrientation.unlockAsync().catch(() => {});
     return () => {
       ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
       ).catch(() => {});
     };
   }, []);
 
+  // Reload video when URL changes
   useEffect(() => {
     if (!player || !resolvedVideoUrl) return;
-
     const load = async () => {
       try {
         await player.replaceAsync(resolvedVideoUrl);
         player.play();
-      } catch (error) {
-        console.warn("Video player load error:", error);
+      } catch (e) {
+        console.warn("Video load error:", e);
       }
       setCurrentTime(0);
       setDuration(0);
       setIsPlaying(true);
     };
-
     load();
   }, [player, resolvedVideoUrl]);
 
+  // Mute
   useEffect(() => {
     if (!player) return;
     try {
       player.muted = isMuted;
-    } catch (error) {
-      console.warn("Muted toggle error:", error);
-    }
+    } catch (e) {}
   }, [player, isMuted]);
 
   useEvent(player, "playingChange", (payload) => {
@@ -162,87 +157,120 @@ export default function VideoDetailScreen() {
   });
 
   useEvent(player, "timeUpdate", (payload) => {
-    const nextTime = Number(payload?.currentTime || 0);
-    const nextDuration = Number(payload?.duration || 0);
-    setCurrentTime(nextTime);
-    if (nextDuration > 0) setDuration(nextDuration);
+    const t = Number(payload?.currentTime || 0);
+    const d = Number(payload?.duration || 0);
+    setCurrentTime(t);
+    if (d > 0) setDuration(d);
   });
 
+  // Fetch data
   useEffect(() => {
-    const fetchVideoDetails = async () => {
+    const fetchAll = async () => {
       if (!routeId) return;
+      const token = await AsyncStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+      // Video details
       try {
         setLoading(true);
-        const token = await AsyncStorage.getItem("token");
-        const response = await fetch(`${API_BASE}/${routeId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-
-        const data = await response.json().catch(() => ({}));
+        const res = await fetch(`${API_BASE}/${routeId}`, { headers });
+        const data = await res.json().catch(() => ({}));
         const payload = data?.video || data;
         if (payload) {
           setVideoDetails((prev) => ({ ...prev, ...payload }));
           setLikesCount(Number(payload.likesCount ?? payload.likes ?? 0));
-          setDislikesCount(
-            Number(payload.dislikesCount ?? payload.dislikes ?? 0),
-          );
+          setDislikesCount(Number(payload.dislikesCount ?? payload.dislikes ?? 0));
           setLiked(Boolean(payload.isLiked));
           setDisliked(Boolean(payload.isDisliked));
         }
-      } catch (error) {
-        console.warn("Load video details error:", error);
+      } catch (e) {
+        console.warn("Video details error:", e);
       } finally {
         setLoading(false);
       }
-    };
 
-    const fetchComments = async () => {
-      if (!routeId) return;
-
+      // Comments
       try {
         setCommentsLoading(true);
-        const token = await AsyncStorage.getItem("token");
-        const response = await fetch(`${API_BASE}/${routeId}/comments`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const data = await response.json().catch(() => ({}));
-        const list = Array.isArray(data?.comments) ? data.comments : [];
-        setComments(list);
-      } catch (error) {
-        console.warn("Load comments error:", error);
+        const res = await fetch(`${API_BASE}/${routeId}/comments`, { headers });
+        const data = await res.json().catch(() => ({}));
+        setComments(Array.isArray(data?.comments) ? data.comments : []);
+      } catch (e) {
+        console.warn("Comments error:", e);
       } finally {
         setCommentsLoading(false);
       }
+
+      // Suggested Videos
+      try {
+        setSuggestedLoading(true);
+        const res = await fetch(`${API_BASE}?limit=12&exclude=${routeId}`, {
+          headers,
+        });
+        const data = await res.json().catch(() => ({}));
+        let list = [];
+        if (Array.isArray(data?.videos)) list = data.videos;
+        else if (Array.isArray(data?.data)) list = data.data;
+        else if (Array.isArray(data)) list = data;
+
+        list = list.filter((v) => String(v._id || v.id) !== String(routeId));
+        setSuggestedVideos(list.slice(0, 12));
+      } catch (e) {
+        console.warn("Suggested error:", e);
+      } finally {
+        setSuggestedLoading(false);
+      }
     };
 
-    fetchVideoDetails();
-    fetchComments();
+    fetchAll();
   }, [routeId]);
 
+  // Auto hide controls
   useEffect(() => {
-    if (!showControls) return undefined;
+    if (!showControls) return;
     if (controlsTimer.current) clearTimeout(controlsTimer.current);
-    controlsTimer.current = setTimeout(() => setShowControls(false), 3000);
+    controlsTimer.current = setTimeout(() => setShowControls(false), 3500);
     return () => clearTimeout(controlsTimer.current);
-  }, [showControls]);
+  }, [showControls, isPlaying]);
 
-  const showControlsTemporarily = () => {
+  const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
-  };
+  }, []);
 
   const handleTogglePlayPause = () => {
+    if (!player) return;
     try {
-      if (!player) return;
-      if (isPlaying) {
-        player.pause();
-      } else {
-        player.play();
-      }
-    } catch (error) {
-      console.warn("Play state error:", error);
-    }
+      isPlaying ? player.pause() : player.play();
+    } catch (e) {}
     showControlsTemporarily();
+  };
+
+  // Double tap seek (YouTube style)
+  const handleSideTap = (side) => {
+    const now = Date.now();
+    if (now - lastTap.current < 280 && lastTapSide.current === side) {
+      // Double tap
+      if (player && duration) {
+        const offset = side === "left" ? -10 : 10;
+        const newTime = Math.max(0, Math.min(duration, currentTime + offset));
+        player.currentTime = newTime;
+        setCurrentTime(newTime);
+      }
+    } else {
+      // Single tap → toggle controls
+      setShowControls((prev) => !prev);
+    }
+    lastTap.current = now;
+    lastTapSide.current = side;
+  };
+
+  const handleSeek = (value) => {
+    if (!player || !duration) return;
+    try {
+      const seekTo = Math.max(0, Math.min(duration, value * duration));
+      player.currentTime = seekTo;
+      setCurrentTime(seekTo);
+    } catch (e) {}
   };
 
   const handleLike = async () => {
@@ -251,26 +279,22 @@ export default function VideoDetailScreen() {
       Alert.alert("Login required", "Please login to like this video.");
       return;
     }
-
     try {
-      const response = await fetch(`${API_BASE}/${routeId}/like`, {
+      const res = await fetch(`${API_BASE}/${routeId}/like`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      const data = await response.json().catch(() => ({}));
-
+      const data = await res.json().catch(() => ({}));
       if (data?.success) {
         setLikesCount(Number(data.likes ?? likesCount));
         setDislikesCount(Number(data.dislikes ?? dislikesCount));
-        setLiked(Boolean(data.reaction === "like"));
-        setDisliked(Boolean(data.reaction === "dislike"));
+        setLiked(data.reaction === "like");
+        setDisliked(data.reaction === "dislike");
       }
-    } catch (error) {
-      console.warn("Like error:", error);
-    }
+    } catch (e) {}
   };
 
   const handleDislike = async () => {
@@ -279,40 +303,34 @@ export default function VideoDetailScreen() {
       Alert.alert("Login required", "Please login to dislike this video.");
       return;
     }
-
     try {
-      const response = await fetch(`${API_BASE}/${routeId}/dislike`, {
+      const res = await fetch(`${API_BASE}/${routeId}/dislike`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      const data = await response.json().catch(() => ({}));
-
+      const data = await res.json().catch(() => ({}));
       if (data?.success) {
         setLikesCount(Number(data.likes ?? likesCount));
         setDislikesCount(Number(data.dislikes ?? dislikesCount));
-        setLiked(Boolean(data.reaction === "like"));
-        setDisliked(Boolean(data.reaction === "dislike"));
+        setLiked(data.reaction === "like");
+        setDisliked(data.reaction === "dislike");
       }
-    } catch (error) {
-      console.warn("Dislike error:", error);
-    }
+    } catch (e) {}
   };
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim() || !routeId) return;
-
     const token = await AsyncStorage.getItem("token");
     if (!token) {
       Alert.alert("Login required", "Please login to comment.");
       return;
     }
-
     try {
       setCommentLoading(true);
-      const response = await fetch(`${API_BASE}/${routeId}/comment`, {
+      const res = await fetch(`${API_BASE}/${routeId}/comment`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -320,8 +338,7 @@ export default function VideoDetailScreen() {
         },
         body: JSON.stringify({ commentText: commentText.trim() }),
       });
-
-      const data = await response.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
       if (data?.success) {
         setComments((prev) => [
           {
@@ -333,25 +350,48 @@ export default function VideoDetailScreen() {
         ]);
         setCommentText("");
       }
-    } catch (error) {
-      console.warn("Comment post error:", error);
+    } catch (e) {
     } finally {
       setCommentLoading(false);
     }
   };
 
-  const handleSeek = (value) => {
-    if (!player || !duration) return;
-    try {
-      const seekTo = Math.max(0, Math.min(duration, value * duration));
-      player.currentTime = seekTo;
-      setCurrentTime(seekTo);
-    } catch (error) {
-      console.warn("Seek error:", error);
-    }
+  const openSuggestedVideo = (item) => {
+    const id = item._id || item.id;
+    navigation.replace("VideoDetail", {
+      id,
+      videoId: id,
+      item,
+      video: item,
+    });
   };
 
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+
+  const renderSuggestedItem = ({ item }) => {
+    const thumb =
+      resolveMediaUrl(item.thumbnail || item.thumb || item.poster) ||
+      FALLBACK_VIDEO.thumbnail;
+
+    return (
+      <TouchableOpacity
+        style={styles.suggestedCard}
+        activeOpacity={0.85}
+        onPress={() => openSuggestedVideo(item)}
+      >
+        <Image source={{ uri: thumb }} style={styles.suggestedThumb} />
+        <View style={styles.suggestedInfo}>
+          <Text style={styles.suggestedTitle} numberOfLines={2}>
+            {item.title || "Untitled"}
+          </Text>
+          <Text style={styles.suggestedMeta} numberOfLines={1}>
+            {item.channel?.name || item.channel || "Channel"} •{" "}
+            {(item.views || 0).toLocaleString()} views
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -360,7 +400,9 @@ export default function VideoDetailScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        nestedScrollEnabled
       >
+        {/* ================= VIDEO PLAYER ================= */}
         <View style={styles.videoWrapper}>
           <VideoView
             player={player}
@@ -368,43 +410,71 @@ export default function VideoDetailScreen() {
             contentFit="contain"
             nativeControls={false}
             allowsPictureInPicture={false}
-            startsPictureInPictureAutomatically={false}
           />
+
+          {/* Left / Right double-tap zones */}
+          <View style={styles.tapZones} pointerEvents="box-none">
+            <Pressable
+              style={styles.tapZone}
+              onPress={() => handleSideTap("left")}
+            />
+            <Pressable
+              style={styles.tapZone}
+              onPress={() => handleSideTap("right")}
+            />
+          </View>
 
           {showControls && (
             <View style={styles.overlay} pointerEvents="box-none">
+              {/* Top */}
               <View style={styles.topBar}>
-                <Text style={styles.videoTitle} numberOfLines={2}>
-                  {videoDetails?.title || FALLBACK_VIDEO.title}
-                </Text>
                 <TouchableOpacity
-                  style={styles.closeBtn}
+                  style={styles.iconBtn}
                   onPress={() => navigation.goBack()}
                 >
-                  <Ionicons name="close" size={22} color="#fff" />
+                  <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+
+                <Text style={styles.videoTitle} numberOfLines={1}>
+                  {videoDetails?.title || FALLBACK_VIDEO.title}
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => setIsMuted((p) => !p)}
+                >
+                  <Ionicons
+                    name={isMuted ? "volume-mute" : "volume-high"}
+                    size={20}
+                    color="#fff"
+                  />
                 </TouchableOpacity>
               </View>
 
+              {/* Center Play */}
               <TouchableOpacity
-                style={styles.centerPlayButton}
+                style={styles.centerPlay}
                 onPress={handleTogglePlayPause}
               >
-                {isPlaying ? (
-                  <Ionicons name="pause" size={52} color="#fff" />
-                ) : (
-                  <Ionicons name="play" size={52} color="#fff" />
-                )}
+                <View style={styles.playCircle}>
+                  <Ionicons
+                    name={isPlaying ? "pause" : "play"}
+                    size={40}
+                    color="#fff"
+                  />
+                </View>
               </TouchableOpacity>
 
+              {/* Bottom Controls */}
               <View style={styles.bottomControls}>
                 <Slider
                   style={styles.slider}
                   minimumValue={0}
                   maximumValue={1}
                   value={progress}
-                  minimumTrackTintColor="#ef4444"
-                  maximumTrackTintColor="#444"
-                  thumbTintColor="#ef4444"
+                  minimumTrackTintColor="#ff0000"
+                  maximumTrackTintColor="rgba(255,255,255,0.3)"
+                  thumbTintColor="#ff0000"
                   onSlidingStart={() => setShowControls(true)}
                   onSlidingComplete={handleSeek}
                 />
@@ -413,42 +483,34 @@ export default function VideoDetailScreen() {
                   <Text style={styles.timeText}>
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </Text>
-
-                  <TouchableOpacity onPress={() => setIsMuted((prev) => !prev)}>
-                    <Ionicons
-                      name={isMuted ? "volume-mute" : "volume-high"}
-                      size={20}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
                 </View>
               </View>
             </View>
           )}
         </View>
 
+        {/* ================= INFO ================= */}
         <View style={styles.infoCard}>
+          <Text style={styles.title}>
+            {videoDetails?.title || FALLBACK_VIDEO.title}
+          </Text>
+          <Text style={styles.meta}>
+            {(videoDetails?.views || 0).toLocaleString()} views •{" "}
+            {videoDetails?.createdAt
+              ? new Date(videoDetails.createdAt).toLocaleDateString()
+              : "Recently"}
+          </Text>
+
           <View style={styles.channelRow}>
             <Image
               source={{ uri: resolvedThumbnail }}
               style={styles.channelAvatar}
             />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>
-                {videoDetails?.title || FALLBACK_VIDEO.title}
-              </Text>
-              <Text style={styles.meta}>
-                {(videoDetails?.views || 0).toLocaleString()} views •{" "}
-                {videoDetails?.createdAt
-                  ? new Date(videoDetails.createdAt).toLocaleDateString()
-                  : "Recently added"}
-              </Text>
-              <Text style={styles.channelName}>
-                {videoDetails?.channel?.name ||
-                  videoDetails?.channel ||
-                  "Channel"}
-              </Text>
-            </View>
+            <Text style={styles.channelName}>
+              {videoDetails?.channel?.name ||
+                videoDetails?.channel ||
+                "Channel"}
+            </Text>
           </View>
 
           <View style={styles.actionRow}>
@@ -482,6 +544,27 @@ export default function VideoDetailScreen() {
           </Text>
         </View>
 
+        {/* ================= SUGGESTED VIDEOS ================= */}
+        <View style={styles.suggestedSection}>
+          <Text style={styles.sectionTitle}>Suggested Videos</Text>
+
+          {suggestedLoading ? (
+            <ActivityIndicator color="#fff" style={{ marginVertical: 20 }} />
+          ) : suggestedVideos.length > 0 ? (
+            <FlatList
+              data={suggestedVideos}
+              keyExtractor={(item) => String(item._id || item.id)}
+              renderItem={renderSuggestedItem}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 12 }}
+            />
+          ) : (
+            <Text style={styles.emptyText}>No suggestions available</Text>
+          )}
+        </View>
+
+        {/* ================= COMMENTS ================= */}
         <View style={styles.commentsCard}>
           <Text style={styles.sectionTitle}>Comments</Text>
 
@@ -513,14 +596,14 @@ export default function VideoDetailScreen() {
           {commentsLoading ? (
             <ActivityIndicator color="#fff" style={{ marginVertical: 14 }} />
           ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <View key={comment._id || comment.id} style={styles.commentItem}>
+            comments.map((c) => (
+              <View key={c._id || c.id} style={styles.commentItem}>
                 <Text style={styles.commentText}>
-                  {comment.text || comment.comment}
+                  {c.text || c.comment}
                 </Text>
                 <Text style={styles.commentMeta}>
-                  {comment.createdAt
-                    ? new Date(comment.createdAt).toLocaleDateString()
+                  {c.createdAt
+                    ? new Date(c.createdAt).toLocaleDateString()
                     : "Just now"}
                 </Text>
               </View>
@@ -546,7 +629,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0f0f0f",
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   videoWrapper: {
     width: SCREEN_WIDTH,
@@ -557,6 +640,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  tapZones: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+  },
+  tapZone: {
+    flex: 1,
+  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "space-between",
@@ -565,37 +655,42 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 50 : 18,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "ios" ? 48 : 16,
+    gap: 10,
   },
   videoTitle: {
     flex: 1,
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    marginRight: 12,
+    fontSize: 15,
+    fontWeight: "600",
   },
-  closeBtn: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+  iconBtn: {
+    backgroundColor: "rgba(0,0,0,0.45)",
     padding: 8,
     borderRadius: 20,
   },
-  centerPlayButton: {
+  centerPlay: {
     alignSelf: "center",
-    padding: 10,
+  },
+  playCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   bottomControls: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
   slider: {
     width: "100%",
-    height: 36,
+    height: 32,
   },
   timeRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
   },
   timeText: {
@@ -608,37 +703,38 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
   },
-  channelRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  channelAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#333",
-  },
   title: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
+    lineHeight: 24,
   },
   meta: {
     color: "#a1a1aa",
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 13,
+    marginTop: 6,
+  },
+  channelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+    gap: 12,
+  },
+  channelAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#333",
   },
   channelName: {
     color: "#fff",
-    fontSize: 14,
-    marginTop: 6,
+    fontSize: 15,
     fontWeight: "600",
   },
   actionRow: {
     flexDirection: "row",
     gap: 10,
     marginTop: 16,
-    flexWrap: "wrap",
   },
   actionBtn: {
     flexDirection: "row",
@@ -650,7 +746,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionBtnActive: {
-    backgroundColor: "rgba(239,68,68,0.2)",
+    backgroundColor: "rgba(239,68,68,0.25)",
   },
   actionText: {
     color: "#fff",
@@ -663,18 +759,49 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 14,
   },
+  suggestedSection: {
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginHorizontal: 14,
+    marginBottom: 12,
+  },
+  suggestedCard: {
+    width: 210,
+    marginRight: 12,
+    backgroundColor: "#18181b",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  suggestedThumb: {
+    width: "100%",
+    height: 118,
+    backgroundColor: "#222",
+  },
+  suggestedInfo: {
+    padding: 10,
+  },
+  suggestedTitle: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  suggestedMeta: {
+    color: "#a1a1aa",
+    fontSize: 11,
+    marginTop: 4,
+  },
   commentsCard: {
     backgroundColor: "#18181b",
     marginHorizontal: 12,
     marginTop: 8,
     borderRadius: 14,
     padding: 14,
-  },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
   },
   commentInputRow: {
     flexDirection: "row",
@@ -725,6 +852,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#a1a1aa",
     fontSize: 13,
+    marginHorizontal: 14,
   },
   loadingContainer: {
     paddingVertical: 20,
